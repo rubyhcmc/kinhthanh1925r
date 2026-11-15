@@ -1703,7 +1703,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.15a';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.15c';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 const DEFAULT_REPO_NAME = 'kinh-thanh-data';
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -4950,7 +4950,8 @@ async function edLoad(){
     const d = localStorage.getItem(draftKey());
     if (d && d !== edLoaded){ txt = d; toast('Đã khôi phục bản nháp chưa lưu'); }
   } catch(e){}
-  ed.Text.value = txt; edRefresh();
+  ed.Text.value = txt; try { ed.Text.setSelectionRange(0, 0); ed.Text.scrollTop = 0; } catch(e){}   // mở chương: con trỏ về đầu (mặc định ở cuối nên câu cuối bị tô sáng)
+  edRefresh();
   if (txt !== edLoaded) edAutoTimer = setTimeout(edAuto, 1200);
 }
 function openEditor(){
@@ -8098,12 +8099,18 @@ function exSetResult(title, files, lines, ok, groups){
       : canPickDir()
       ? `<label class="lbl">Thư mục lưu</label><div style="display:flex;gap:8px;align-items:center;margin:0 0 4px"><button class="btn" data-k="dir" type="button">📁 Chọn thư mục…</button><span id="exDirName" style="flex:1;min-width:0;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Chưa chọn – sẽ tải về thư mục mặc định</span></div>`
       : `<p class="hint" style="margin:4px 0 0;font-size:13px;color:var(--muted)">Điện thoại: bấm Lưu thì bảng chia sẻ hiện ra – chọn “Lưu vào Tệp” rồi chọn thư mục.</p>`}
-    <div class="btns" style="flex-direction:column"><button class="btn primary" data-k="save" type="button">💾 Lưu tệp</button><button class="btn" data-k="x" type="button">Xong</button></div></div>`;
+    <div id="exSaveMsg" role="status" style="display:none;margin:10px 0 0;padding:10px 12px;border-radius:10px;font-weight:700;font-size:14px;white-space:pre-wrap"></div>
+    <div class="btns" style="flex-direction:column"><button class="btn primary" data-k="save" type="button">💾 Lưu tệp</button><button class="btn" data-k="x" type="button">${single ? 'Đóng (không lưu)' : 'Xong'}</button></div></div>`;
+  let saved = false, saving = false;
+  const msgBox = o.querySelector('#exSaveMsg');
+  const showMsg = (txt, good) => { msgBox.style.display = 'block'; msgBox.textContent = txt; msgBox.style.background = good ? '#e3f3e3' : '#fde4e1'; msgBox.style.color = good ? '#1d5e22' : '#8a1f14'; };
+  const askClose = () => !single || saved || confirm('Bản xuất này CHƯA được lưu vào tệp nào.\n\nĐóng và bỏ bản xuất này?');
   o.addEventListener('click', async e => {
     const b = e.target.closest('[data-k]');
-    if (!b){ if (e.target === o) o.remove(); return; }
+    if (!b){ if (e.target === o && !saving && askClose()) o.remove(); return; }
     const k = b.dataset.k;
-    if (k === 'x') return o.remove();
+    if (saving) return;
+    if (k === 'x'){ if (askClose()) o.remove(); return; }
     if (k === 'dir'){
       try { dir = await window.showDirectoryPicker({ id:'ktexport', mode:'readwrite' }); o.querySelector('#exDirName').textContent = '📁 ' + dir.name; o.querySelector('#exDirName').style.color = 'var(--fg)'; }
       catch(err){ if (!(err && err.name === 'AbortError')) toast('Không mở được thư mục: ' + (err.message || err)); }
@@ -8115,14 +8122,23 @@ function exSetResult(title, files, lines, ok, groups){
       return;
     }
     if (k === 'save' && single){
+      const sv0 = o.querySelector('[data-k="save"]'), label0 = sv0.textContent;
       try {
-        if (!tgt){ try { tgt = await ovrPick(files[0], tgtKey); setTgt(); } catch(err){ if (err && err.name === 'AbortError') return toast('Đã hủy – chưa lưu tệp nào'); throw err; } }
+        if (!tgt){ try { tgt = await ovrPick(files[0], tgtKey); setTgt(); } catch(err){ if (err && err.name === 'AbortError') return showMsg('Đã hủy – chưa lưu tệp nào', false); throw err; } }
+        saving = true; sv0.disabled = true; sv0.textContent = '⏳ Đang lưu…'; showMsg('Đang ghi vào “' + tgt.name + '”…', true);
         const r = await ovrWrite(tgt, files[0]);
-        if (r.cancel) return toast('Đã hủy – tệp cũ giữ nguyên');
-        const msg = `💾 Đã lưu đè “${tgt.name}”${r.note ? ' · ' + r.note : ''}`, h = tgt;
-        if (r.old) toastAct(msg, 'Hoàn tác', async () => { try { const w = await h.createWritable(); await w.write(r.old); await w.close(); toast('↩ Đã trả tệp về nội dung cũ'); } catch(e){ toast('Không hoàn tác được: ' + (e.message || e)); } });
-        else toast(msg);
-      } catch(err){ toast('Không lưu đè được: ' + (err.message || err)); }
+        saving = false; sv0.disabled = false;
+        if (r.cancel){ sv0.textContent = label0; return showMsg('Đã hủy – tệp cũ giữ nguyên', false); }
+        saved = true;
+        const d = new Date(), hh = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0');
+        const msg = `✔ ĐÃ LƯU ĐÈ “${tgt.name}” lúc ${hh}${r.note ? ' · ' + r.note : ''}`, h = tgt;
+        sv0.textContent = '✔ Đã lưu xong'; showMsg(msg, true);
+        setTimeout(() => {
+          o.remove();
+          if (r.old) toastAct(msg, 'Hoàn tác', async () => { try { const w = await h.createWritable(); await w.write(r.old); await w.close(); toast('↩ Đã trả tệp về nội dung cũ'); } catch(e){ toast('Không hoàn tác được: ' + (e.message || e)); } });
+          else toast(msg);
+        }, 1400);
+      } catch(err){ saving = false; sv0.disabled = false; sv0.textContent = label0; showMsg('✖ Không lưu đè được: ' + (err.message || err), false); }
       return;
     }
     if (k === 'save'){
@@ -10457,7 +10473,7 @@ PStore.init();
   if (ta){ ['keyup', 'click', 'input', 'focus'].forEach(ev => ta.addEventListener(ev, later)); }
   // sau mỗi lần xem trước được vẽ lại → áp dụng lại đồng bộ
   try {
-    if (typeof edRefresh === 'function'){ const orig = edRefresh; edRefresh = function(){ const top = pv ? pv.scrollTop : 0; const r = orig.apply(this, arguments); try { if (pv) pv.scrollTop = top; lastN = null; sync(true); } catch(e){} return r; }; }
+    if (typeof edRefresh === 'function'){ const orig = edRefresh; edRefresh = function(){ const top = pv ? pv.scrollTop : 0; const r = orig.apply(this, arguments); try { if (pv) pv.scrollTop = top; lastN = null; if (document.activeElement === ta) sync(true); else pv && pv.querySelectorAll('.edsync').forEach(x => x.classList.remove('edsync')); } catch(e){} return r; }; }
   } catch(e){}
   // tên chương ở đầu ô xem trước
   const cap = $('#edPvCap');
