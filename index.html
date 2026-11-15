@@ -1172,7 +1172,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.15c';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.15d';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3421,6 +3421,13 @@ window.updBkRefresh = () => {
     : '⚠ Lần sao lưu file gần nhất: ' + r.ago + '. Nên sao lưu lại trước khi cập nhật.';
 };
 $('#updBkNow').onclick = async () => { try { await dtExport(); } catch(e){ toast('Chưa sao lưu được: ' + (e.message || e)); } window.updBkRefresh(); };
+/* Khi cập nhật sang bản mới: xoá sạch phần "vỏ app" cũ mà iPhone đã lưu (các bản lưu tạm của index.html, sw.js… trong Cache Storage) và gỡ bộ nền cũ,
+   để lần tải lại lấy ĐÚNG bản mới từ máy chủ. KHÔNG đụng tới: kho dự phòng (kt-store-v1), kho nội dung Kinh Thánh (kt-data-v1 – đã được đồng bộ ngay trước đó),
+   IndexedDB và localStorage (dấu trang, ghim, ghi chú, tô màu, cài đặt) → dữ liệu cá nhân của người đọc còn nguyên. */
+async function ktPurgeShell(){
+  try { if ('caches' in window){ const ks = await caches.keys(); await Promise.all(ks.filter(k => k !== MEM_CACHE && k !== DATA_CACHE).map(k => caches.delete(k))); } } catch(e){}
+  try { if ('serviceWorker' in navigator){ const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); } } catch(e){}
+}
 $('#btnUpd').onclick = async () => {
   const btn = $('#btnUpd'), msg = $('#updMsg'); if (btn.disabled) return;
   if (!navigator.onLine){ msg.textContent = 'Đang offline – chưa kiểm tra được.'; return; }
@@ -3449,7 +3456,7 @@ $('#btnUpd').onclick = async () => {
         if (i === 0){ try { await dtExport(); } catch(e){} window.updBkRefresh(); say('Đã sao lưu. Bấm "Kiểm tra cập nhật" lần nữa để cập nhật.'); btn.disabled = false; return; }
         if (i !== 1){ say('Đã hoãn cập nhật (có bản mới ' + m[1] + ').'); btn.disabled = false; return; }
       }
-      say('Có bản mới ' + m[1] + ' – đang tải lại…'); setTimeout(() => location.replace(u.href), 700); return;
+      say('Có bản mới ' + m[1] + ' – đang xoá bản cũ và tải bản mới…'); await ktPurgeShell(); setTimeout(() => location.replace(u.href), 500); return;
     }
   } catch(e){ say('Không kiểm tra được: ' + (e.message || e)); }
   btn.disabled = false;
