@@ -725,6 +725,7 @@ body.pg .pgv>.reader .hd,body.pg .pgv>.reader .chhead{break-after:avoid;-webkit-
 body.pg .pgv>.reader .pl,body.pg .pgv>.reader .fn,body.pg .pgv>.reader .fnx{break-inside:avoid;-webkit-column-break-inside:avoid}
 /* Dàn trang v.n: khối tiêu đề (mục lớn + tiểu mục + dòng tham chiếu) không bị cắt đôi giữa hai trang; .pgbrk = JS phát hiện tiêu đề bị kẹt một mình cuối trang → đẩy cả khối sang đầu trang kế (iOS/WebKit bỏ qua break-after:avoid) */
 body.pg .pgv>.reader .hd{break-inside:avoid;-webkit-column-break-inside:avoid}
+body.pg .pgv>.reader .pgnm{display:inline-block;white-space:nowrap}   /* tên riêng bị cắt đôi ở gạch nối giữa hai trang → giữ nguyên cả tên, đẩy sang trang sau (JS: pgNm) */
 body.pg .pgv>.reader .hd.pgbrk{break-before:column;-webkit-column-break-before:always;margin-top:0}
 /* Trang giấy: câu vừa mở (đọc tới đây / dấu trang / ghim) chỉ tô nền, KHÔNG vẽ khung viền đen + bóng tràn ra ngoài — khung ấy bị cột trang cắt mất cạnh trên, chồng lên chữ số chương và trông như vỡ giao diện */
 html body.pg .v.flash,html[data-paper] body.pg .v.flash{outline:0!important;box-shadow:none!important;animation:none!important;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
@@ -1171,7 +1172,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.15a';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.15b';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -4593,7 +4594,7 @@ function pgTextRects(el){
   for (let n; (n = w.nextNode());){ r.selectNodeContents(n); for (const rc of r.getClientRects()) if (rc.height > 1 && rc.width > 0.5) out.push(rc); }
   return out;
 }
-function pgBrk(art, W, lh){
+function pgBrk0(art, W, lh){
   art.querySelectorAll('.pgbrk').forEach(e => e.classList.remove('pgbrk'));
   const idx = []; art._brk = idx;
   const hds = art.querySelectorAll('.hd'); if (!hds.length) return idx;
@@ -4615,6 +4616,54 @@ function pgBrk(art, W, lh){
     }
     if (bad && hr[0].top - top0 > lh * 2){ h.classList.add('pgbrk'); idx.push(i); }   // đã ở đầu trang rồi thì thôi
   });
+  return idx;
+}
+/* Tên riêng có gạch nối (Ha-vi-la, Ê-xê-chi-ên…) không bị cắt đôi giữa HAI TRANG: nếu dòng cuối của một trang kết thúc bằng "Ha-" còn "vi-la" nằm đầu trang sau,
+   bọc đúng từ đó trong <span class="pgnm"> (inline-block, không xuống dòng) để cả từ sang trang sau. Chỉ đụng tới những từ bị cắt; gạch nối giữa các dòng trong cùng trang giữ nguyên như sách in. */
+function pgNmClear(art){
+  const ps = new Set();
+  art.querySelectorAll('span.pgnm').forEach(sp => { const p = sp.parentNode; sp.replaceWith(document.createTextNode(sp.textContent)); if (p) ps.add(p); });
+  ps.forEach(p => p.normalize());
+}
+function pgNm(art, W){                                              // trả về số từ vừa bọc (0 = không còn từ nào bị cắt đôi)
+  const aL = art.getBoundingClientRect().left, col = rc => Math.floor((rc.left - aL + 1) / W), r = document.createRange();
+  const LET = /[\p{L}\p{M}]/u, WORD = /[\p{L}\p{M}-]/u;
+  let added = 0;
+  for (let guard = 0; guard < 40; guard++){
+    let hit = null;
+    const w = document.createTreeWalker(art, NodeFilter.SHOW_TEXT, { acceptNode: n =>
+      (n.nodeValue.indexOf('-') >= 0 && !(n.parentElement && n.parentElement.closest('sup,.vn,.dc,.fnk,.pgnm,[hidden]'))) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+    for (let n; !hit && (n = w.nextNode());){
+      r.selectNodeContents(n);
+      let c0 = null, multi = false;
+      for (const rc of r.getClientRects()){ if (rc.width < 0.5 || rc.height < 1) continue; const c = col(rc); if (c0 === null) c0 = c; else if (c !== c0){ multi = true; break; } }
+      if (!multi) continue;                                         // đoạn chữ nằm gọn trong một trang
+      const t = n.nodeValue;
+      for (let i = 1; i < t.length - 1 && !hit; i++){
+        if (t[i] !== '-' || !LET.test(t[i - 1]) || !LET.test(t[i + 1])) continue;
+        r.setStart(n, i); r.setEnd(n, i + 1); const a = r.getBoundingClientRect();
+        r.setStart(n, i + 1); r.setEnd(n, i + 2); const b = r.getBoundingClientRect();
+        if (a.width < 0.5 || b.width < 0.5 || col(b) <= col(a)) continue;      // gạch nối này không nằm sát ranh giới trang
+        let s0 = i; while (s0 > 0 && WORD.test(t[s0 - 1])) s0--;
+        let e0 = i + 1; while (e0 < t.length && WORD.test(t[e0])) e0++;
+        hit = { n, s0, e0 };
+      }
+    }
+    if (!hit) break;
+    try {
+      r.setStart(hit.n, hit.s0); r.setEnd(hit.n, hit.e0);
+      const sp = document.createElement('span'); sp.className = 'pgnm'; r.surroundContents(sp); added++;
+    } catch(e){ break; }
+  }
+  return added;
+}
+function pgBrk(art, W, lh){
+  pgNmClear(art); art._nm = 0;
+  let idx = pgBrk0(art, W, lh);
+  for (let k = 0; k < 3; k++){                                     // bọc từ bị cắt rồi dàn lại tiêu đề (vị trí tiêu đề có thể đổi theo)
+    const n = pgNm(art, W); if (!n) break;
+    art._nm += n; idx = pgBrk0(art, W, lh);
+  }
   return idx;
 }
 function pgFitArt(art){
@@ -4693,7 +4742,7 @@ function pgResetArt(art){
   art = art || $('#bibleText'); if (!art) return;
   const st = art.style;
   st.transform = st.lineHeight = st.height = st.paddingTop = st.paddingBottom = st.transition = st.willChange = '';
-  art.querySelectorAll('.pgbrk').forEach(e => e.classList.remove('pgbrk')); art._brk = null;
+  art.querySelectorAll('.pgbrk').forEach(e => e.classList.remove('pgbrk')); art._brk = null; try { pgNmClear(art); art._nm = 0; } catch(e){}
   art.querySelectorAll('.pgjmp').forEach(e => e.classList.remove('pgjmp'));
   if (!art.getAttribute('style')) art.removeAttribute('style');
   document.body.classList.remove('pgchrome');
@@ -4833,7 +4882,7 @@ async function pgMake(dir){                                        // trả về
   const a2 = nx.firstElementChild; pgFitArt(a2); const pages = pgPagesOf(a2, W);
   pgSetX(a2, dir > 0 ? 0 : pages - 1, W);
   { const st = a2.style;      // nhớ kết quả dàn trang của chương kế: khi lật xong không phải đo lại lần nữa (đây là phần gây khựng ở cuối chương)
-    pg.fit = { key:[nb.name, nb.ch, S.view, S.fs, S.font, innerWidth, innerHeight, S.paper ? 1 : 0].join('|'), lh:st.lineHeight, pt:st.paddingTop, pb:st.paddingBottom, h:st.height, pages, brk:(a2._brk || []).slice() }; }
+    if (!a2._nm) pg.fit = { key:[nb.name, nb.ch, S.view, S.fs, S.font, innerWidth, innerHeight, S.paper ? 1 : 0].join('|'), lh:st.lineHeight, pt:st.paddingTop, pb:st.paddingBottom, h:st.height, pages, brk:(a2._brk || []).slice() }; }
   return { node:nx, commit: async () => { if (pgSnap() !== snap) return; pg.toEnd = dir < 0; await stepChapter(dir); } };
 }
 function pgSync(){                                                  // đo lại số trang ngay trước khi lật: số trang cũ có thể đã lỗi thời (font tải xong, đổi cỡ chữ…)
