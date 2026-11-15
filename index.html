@@ -945,6 +945,12 @@ html[data-paper] .reader.print{text-align:justify}
     <div class="sgrab"></div>
     <div class="shead"><h3>Cài đặt</h3><button class="sdone" id="closeSettings">Xong</button></div>
 
+    <div class="slabel" id="ktInstSec" hidden>Cài app</div>
+    <div class="sgroup" id="ktInstGrp" hidden>
+      <div class="srow"><div class="stxt"><b>Cài app lên Màn hình chính</b><span id="ktInstSub">Mở app như ứng dụng thật, đọc được cả khi không có mạng</span></div>
+        <button class="sbtn" id="ktInstBtn" type="button">Cài app</button></div>
+    </div>
+
     <div class="slabel">Giao diện đọc</div>
     <div class="sgroup">
       <div class="srow"><div class="stxt"><b>Chế độ màu</b><span>Sáng, tối, hoặc “Tự động” theo điện thoại</span></div>
@@ -1165,7 +1171,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.13e';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.15a';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -4417,6 +4423,52 @@ function makeIcon(size){
   return c.toDataURL('image/png');
 }
 (function(){ try { const l = document.createElement('link'); l.rel = 'icon'; l.type = 'image/svg+xml'; l.href = 'data:image/svg+xml,' + encodeURIComponent(LOGO_SVG); document.head.appendChild(l); } catch(e){} })();
+/* §§ ▼▼▼ MỤC 3 · BỘ NHỚ LƯU TRỮ TRÊN MÁY — Nút “Cài app” lên Màn hình chính (độc lập, không đụng vào phần khác) ▼▼▼ */
+(function(){
+  let dp = null;                                                   // sự kiện cài đặt của Chrome/Edge/Android (nếu có)
+  const standalone = () => { try { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; } catch(e){ return false; } };      // (không tính 'fullscreen': chế độ toàn màn hình khi đọc trong trình duyệt không phải là đã cài)
+  const ua = navigator.userAgent || '';
+  const iOS = /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const inApp = /FBAN|FBAV|FB_IAB|Zalo|Instagram|Line\/|Messenger|MicroMessenger|TikTok/i.test(ua);       // trình duyệt nhúng trong app khác: không cài được
+  const els = () => ({ sec:document.getElementById('ktInstSec'), grp:document.getElementById('ktInstGrp'), btn:document.getElementById('ktInstBtn'), sub:document.getElementById('ktInstSub') });
+  function refresh(){
+    try {
+      const e = els(); if (!e.grp) return;
+      const show = !standalone();                                  // đã chạy từ biểu tượng Màn hình chính → không cần nút
+      e.sec.hidden = !show; e.grp.hidden = !show;
+      if (!show) return;
+      e.btn.textContent = dp ? 'Cài app' : 'Xem cách cài';
+      e.sub.textContent = dp ? 'Bấm “Cài app”, rồi chọn Cài đặt/Thêm. App sẽ có biểu tượng riêng ở Màn hình chính' : 'Mở app như ứng dụng thật, đọc được cả khi không có mạng';
+    } catch(err){}
+  }
+  window.addEventListener('beforeinstallprompt', ev => { ev.preventDefault(); dp = ev; refresh(); });
+  window.addEventListener('appinstalled', () => { dp = null; refresh(); try { toast('✔ Đã cài app lên máy. Hãy mở từ biểu tượng ở Màn hình chính.'); } catch(e){} });
+  function guide(){
+    let title = 'Cách cài app lên Màn hình chính', steps;
+    if (inApp) steps = ['Bạn đang mở trong trình duyệt của app khác (Zalo, Facebook…), trình duyệt này không cài được.', iOS ? 'Hãy bấm biểu tượng ⋯ hoặc “Mở bằng Safari”, rồi làm lại.' : 'Hãy bấm biểu tượng ⋯ hoặc “Mở bằng Chrome”, rồi làm lại.'];
+    else if (iOS) steps = ['Dùng trình duyệt Safari (hoặc Chrome trên iPhone).', 'Bấm nút Chia sẻ (hình ô vuông có mũi tên đi lên), ở thanh dưới hoặc thanh trên.', 'Kéo xuống, chọn “Thêm vào Màn hình chính”.', 'Bấm “Thêm” ở góc trên. Biểu tượng Kinh Thánh sẽ hiện ở Màn hình chính.'];
+    else if (/Android/i.test(ua)) steps = ['Bấm nút ⋮ (ba chấm) ở góc trên của Chrome.', 'Chọn “Cài đặt ứng dụng” hoặc “Thêm vào Màn hình chính”.', 'Bấm “Cài đặt”. Biểu tượng Kinh Thánh sẽ hiện ở Màn hình chính.', 'Nếu không thấy mục này: hãy tải lại trang một lần, đợi vài giây rồi thử lại.'];
+    else steps = ['Trên máy tính, dùng Chrome hoặc Edge.', 'Bấm biểu tượng “Cài đặt” (hình màn hình có mũi tên) ở bên phải thanh địa chỉ, hoặc vào menu ⋮ → “Cài đặt Kinh Thánh…”.', 'Bấm “Cài đặt”. App sẽ mở thành cửa sổ riêng và có biểu tượng trên máy.', 'Nếu không thấy: tải lại trang một lần, đợi vài giây rồi thử lại.'];
+    const o = document.createElement('div'); o.className = 'overlay'; o.style.zIndex = 95;
+    o.innerHTML = '<div class="sheet"><h3>' + esc(title) + '</h3><ol style="margin:0 0 14px;padding-left:22px;line-height:1.6">' + steps.map(t => '<li style="margin:0 0 6px">' + esc(t) + '</li>').join('') + '</ol><div class="btns" style="flex-direction:column"><button class="btn primary" data-k="x" type="button">Đã hiểu</button></div></div>';
+    o.addEventListener('click', e => { if (e.target === o || e.target.closest('[data-k="x"]')) o.remove(); });
+    document.body.appendChild(o);
+  }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('#ktInstBtn'); if (!b) return;
+    if (!dp){ guide(); return; }
+    const p = dp; dp = null;                                       // mỗi sự kiện chỉ dùng được một lần
+    try {
+      p.prompt();
+      const r = await p.userChoice;
+      if (r && r.outcome === 'accepted') toast('Đang cài app… Hãy mở từ biểu tượng ở Màn hình chính.');
+      else { toast('Bạn chưa cài. Cần cài thì bấm lại “Xem cách cài”.'); }
+    } catch(err){ guide(); }
+    refresh();
+  });
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#btnSettings')) refresh(); });
+  refresh();
+})();
 function setupPWA(){
   /* Khai báo cài đặt: ưu tiên tệp thật manifest.webmanifest nằm cạnh trang (Android/Chrome nhận “Cài đặt ứng dụng” ổn định hơn).
      Chưa có tệp đó (hoặc chưa tải lên) thì tự tạo bằng mã như trước, app vẫn cài được. */
