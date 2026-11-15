@@ -1703,7 +1703,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.14b';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.15a';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 const DEFAULT_REPO_NAME = 'kinh-thanh-data';
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -4908,7 +4908,7 @@ async function persistChapter(name, ch, vs, abbr, sub, title, subPos, dc){
   const metas = await dbAll('bookMeta');
   let meta = metas.find(m => m.name === name);
   if (!meta) meta = { name, order: metas.reduce((a, m) => Math.max(a, m.order), 0) + 1 };
-  meta.abbr = abbr || meta.abbr || ''; if (typeof sub === 'string') meta.sub = sub.trim(); if (typeof title === 'string') meta.title = title.trim(); if (typeof subPos === 'string') meta.subPos = subPos; if (typeof dc === 'string') meta.dc = dc; meta.chapterCount = rec.chapters.length;
+  if (typeof abbr === 'string') meta.abbr = abbr.trim(); if (typeof sub === 'string') meta.sub = sub.trim(); if (typeof title === 'string') meta.title = title.trim(); if (typeof subPos === 'string') meta.subPos = subPos; if (typeof dc === 'string') meta.dc = dc; meta.chapterCount = rec.chapters.length;
   await dbPut('books', [rec]); await dbPut('bookMeta', [meta]);
   S.book = name; S.chapter = ch; saveS();
   await initBible(); await refreshStats(); markDirty();
@@ -4917,10 +4917,13 @@ async function persistChapter(name, ch, vs, abbr, sub, title, subPos, dc){
 async function edAuto(){
   clearTimeout(edAutoTimer);
   const { name, ch } = edCur; if (!name || !(ch >= 1)) return;
-  const text = ed.Text.value; if (!text.trim() || text === edLoaded) return;
+  const text = ed.Text.value; if (!text.trim()) return;
+  const bm0 = bibleMeta.find(m => m.name === name), same0 = ed.Book.value.trim() === name;
+  const metaDirty = !!bm0 && same0 && ((bm0.abbr || '') !== ed.Abbr.value.trim() || (bm0.sub || '') !== ed.Sub.value.trim() || (bm0.title || '') !== ed.Title.value.trim() || (bm0.subPos === 'below' ? 'below' : '') !== ed.SubPos.value || (bm0.dc === 'off' ? 'off' : '') !== ed.DcOff.value);   // chỉ sửa thông tin sách (vd xóa "II") cũng phải được lưu
+  if (text === edLoaded && !metaDirty) return;
   const vs = parseMarkup(text, +ed.Start.value || 1); if (!vs.length) return;
   try {
-    const abbr = ed.Book.value.trim() === name ? ed.Abbr.value.trim() : '';
+    const abbr = ed.Book.value.trim() === name ? ed.Abbr.value.trim() : undefined;
     await persistChapter(name, ch, vs, abbr, ed.Book.value.trim() === name ? ed.Sub.value : undefined, ed.Book.value.trim() === name ? ed.Title.value : undefined, ed.Book.value.trim() === name ? ed.SubPos.value : undefined, ed.Book.value.trim() === name ? ed.DcOff.value : undefined);
     edLoaded = text;
     try { localStorage.removeItem(draftKey()); } catch(e){}
@@ -4931,13 +4934,14 @@ async function edAuto(){
 
 async function edLoad(){
   const name = ed.Book.value.trim(), ch = parseInt(ed.Chap.value, 10);
+  const prevBook = edCur.name;
   edCur = { name, ch: ch >= 1 ? ch : 0 }; ed.Auto.textContent = '';
   if (!name || !(ch >= 1)){ ed.Text.value = ''; edLoaded = ''; return edRefresh(); }
   const rec = await dbGet('books', name);
   const meta = bibleMeta.find(m => m.name === name);
-  if (meta && !ed.Abbr.value) ed.Abbr.value = meta.abbr || '';
-  if (meta && !ed.Sub.value) ed.Sub.value = meta.sub || '';
-  if (meta && !ed.Title.value) ed.Title.value = meta.title || '';
+  if (meta && prevBook !== name){   // chỉ nạp lại khi đổi sách; nếu không, ô bị xóa trống sẽ tự điền lại chữ cũ
+    ed.Abbr.value = meta.abbr || ''; ed.Sub.value = meta.sub || ''; ed.Title.value = meta.title || '';
+  }
   if (meta) ed.SubPos.value = meta.subPos === 'below' ? 'below' : '';
   if (meta) ed.DcOff.value = meta.dc === 'off' ? 'off' : '';
   edLoaded = serializeVerses((rec && rec.chapters[ch - 1]) || []);
