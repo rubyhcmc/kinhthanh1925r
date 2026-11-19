@@ -149,9 +149,9 @@ select{min-width:0}
 
 /* Một hàng duy nhất: chọn Sách/Chương/Câu bên trái, biểu tượng bên phải */
 .top h1{display:none}
-.top .navrow{position:static;flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) minmax(0,1.15fr);gap:5px;padding:0;border:0;background:none;transform:none}
+.top .navrow{position:static;flex:1;min-width:0;display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1.2fr) minmax(0,1.2fr);gap:5px;padding:0;border:0;background:none;transform:none}
 .nf{position:relative;min-width:0}
-.top .navrow .nf input{height:36px;padding:0 6px 0 8px;border-radius:8px;font-size:16px;background:transparent;text-overflow:ellipsis;-webkit-appearance:none;appearance:none}
+.top .navrow .nf input{height:36px;padding:0 4px 0 6px;border-radius:8px;font-size:16px;background:transparent;text-overflow:ellipsis;-webkit-appearance:none;appearance:none}
 .nf input::placeholder{color:var(--fg);opacity:1}
 .nf input:focus,.nf.vf input{border-color:var(--accent);outline:0}
 .nf.vf input::placeholder{color:var(--muted);opacity:.55}
@@ -160,7 +160,7 @@ select{min-width:0}
 .nf input:disabled{opacity:.5}
 /* Số mờ cho biết tổng: ô Chương hiện "/30" (sách có 30 chương), ô Câu hiện "/24" (chương có 24 câu) */
 .nrg{position:absolute;right:4px;top:50%;transform:translateY(-50%);font:600 10px var(--sans);letter-spacing:0;color:var(--muted);opacity:.75;pointer-events:none;white-space:nowrap}
-.nf:focus-within .nrg,.nf.vf .nrg,.nf.bad .nrg{display:none}
+.nf:focus-within .nrg,.nf.vf .nrg,.nf.bad .nrg,.nf.tight .nrg{display:none}
 .nf input:focus::placeholder,.nf.vf input::placeholder{font-size:12px;letter-spacing:-.02em;white-space:nowrap}
 .nf:focus-within input,.nf.vf input{padding-left:5px!important;padding-right:3px!important;text-overflow:clip!important}
 html.sa:not(.mtop) .ntip{top:auto;bottom:calc(100% + 8px)}
@@ -1172,7 +1172,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.15d';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.19a';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -1581,6 +1581,26 @@ function ktJumpVerse(n, top){
 }
 $('#selVerse').onchange = e => { const n = +e.target.value; if (n) ktJumpVerse(n); e.target.value = ''; };
 /* Ô Chương / Câu: nhập số trực tiếp (bàn phím số), đủ số hợp lệ là nhảy ngay */
+/* Số mờ "/36" nằm đè bên phải ô: chỉ giữ chỗ cho nó khi ô còn đủ rộng để hiện ĐỦ chữ số đang hiển thị (ví dụ chương 20, 119);
+   nếu không đủ thì ẩn số mờ (class tight) để chữ số chính không bị cắt thành "2…". */
+function fitRg(e, inp, sample){
+  const t = e.textContent, nf = inp.closest('.nf');
+  if (nf) nf.classList.remove('tight');
+  inp.style.paddingRight = '';
+  if (!t) return;
+  const tw = Math.ceil(t.length * 5.8 + 3);
+  let fit = true;
+  try {
+    const cs = getComputedStyle(inp), W = inp.clientWidth;
+    if (W > 0){
+      const cx = fitRg.cx || (fitRg.cx = document.createElement('canvas').getContext('2d'));
+      cx.font = [cs.fontStyle, cs.fontWeight, cs.fontSize, cs.fontFamily].join(' ');
+      const need = cx.measureText(sample || '0').width, avail = W - (parseFloat(cs.paddingLeft) || 0) - tw;
+      fit = need + 2 <= avail;
+    }
+  } catch(_){}
+  if (fit) inp.style.paddingRight = tw + 'px'; else if (nf) nf.classList.add('tight');
+}
 function syncNav(){
   const c = $('#niChap'), v = $('#niVerse'), on = !!curBook;
   c.disabled = v.disabled = !on;
@@ -1590,8 +1610,9 @@ function syncNav(){
   /* số mờ tổng chương / tổng câu */
   const vsN = on ? (curBook.chapters[S.chapter - 1] || []) : [], nvTot = vsN.reduce((m, x) => Math.max(m, x.n || 0), 0) || vsN.length;
   const tc = on ? curBook.chapters.length : 0;
-  const setRg = (id, inp, n) => { const e = $(id); if (!e) return; const t = n ? '/' + n : ''; e.textContent = t; inp.style.paddingRight = t ? (t.length * 6 + 4) + 'px' : ''; };
-  setRg('#nrgChap', c, tc); setRg('#nrgVerse', v, nvTot);
+  const setRg = (id, inp, n, sample) => { const e = $(id); if (!e) return; e.textContent = n ? '/' + n : ''; fitRg(e, inp, sample); };
+  setRg('#nrgChap', c, tc, String(c.value || S.chapter || ''));
+  setRg('#nrgVerse', v, nvTot, v.placeholder || 'Câu');
   syncVerse();
 }
 /* Ô "Câu" hiển thị số câu đang đọc (câu đầu tiên trên màn hình) */
@@ -1618,7 +1639,7 @@ function curVerseNo(){
 let svT = 0;
 function syncVerse(){
   const v = $('#niVerse'); if (!v || document.activeElement === v) return;
-  cancelAnimationFrame(svT); svT = requestAnimationFrame(() => { if (document.activeElement === v) return; v.placeholder = curBook ? (curVerseNo() || 'Câu') : 'Câu'; });
+  cancelAnimationFrame(svT); svT = requestAnimationFrame(() => { if (document.activeElement === v) return; v.placeholder = curBook ? (curVerseNo() || 'Câu') : 'Câu'; const g = $('#nrgVerse'); if (g) fitRg(g, v, v.placeholder); });
 }
 SCR.addEventListener('scroll', syncVerse, { passive:true });
 SCR.addEventListener('scroll', () => rsTrack(), { passive:true });
