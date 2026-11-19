@@ -1172,7 +1172,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.19b';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.19c';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -4654,12 +4654,29 @@ function pgBrk0(art, W, lh){
 function pgNmClear(art){
   const ps = new Set();
   art.querySelectorAll('span.pgnm').forEach(sp => { const p = sp.parentNode; sp.replaceWith(document.createTextNode(sp.textContent)); if (p) ps.add(p); });
+  art.querySelectorAll('wbr.pgw').forEach(w => { const p = w.parentNode; w.remove(); if (p) ps.add(p); });
   ps.forEach(p => p.normalize());
 }
-const PGNM_RE = /[\p{L}\p{M}]+(?:[-\u2010\u2011][\p{L}\p{M}]+)+/gu;
+/* Dàn trang kiểu máy đọc sách: tên riêng nhiều âm (Na-ách-son, A-mi-na-đáp…) được phép xuống dòng Ở CHỖ GẠCH NỐI như sách in, miễn mỗi bên còn ít nhất 2 chữ cái
+   (không để "A-" lẻ loi cuối dòng). Dấu câu liền kề (. , ; : ! ? ) ” …) được gói CHUNG với tên nên không bị tách riêng ra thành khoảng hở khi canh đều hai bên.
+   Mỗi cụm giữa hai chỗ được phép ngắt là một <span class="pgnm"> (không xuống dòng bên trong) và giữa các cụm có <wbr class="pgw"> báo chỗ ngắt hợp lệ. Chữ (textContent) không đổi. */
+const PGN_L = '\\u201C\\u2018\\u00AB(\\[', PGN_R = '.,;:!?)\\]\\u00BB\\u201D\\u2019\\u2026';
+const PGNM_RE = new RegExp('[' + PGN_L + ']*[\\p{L}\\p{M}]+(?:[-\\u2010\\u2011][\\p{L}\\p{M}]+)+[' + PGN_R + ']*', 'gu');
+function pgNmGroups(word){
+  const m = word.match(new RegExp('^([' + PGN_L + ']*)(.*?)([' + PGN_R + ']*)$', 'u')), lead = m[1], core = m[2], tail = m[3];
+  const segs = core.split(/(?<=[-\u2010\u2011])/u), out = []; let cur = '';
+  const letters = x => x.replace(/[-\u2010\u2011]/g, '').length;
+  for (let i = 0; i < segs.length; i++){
+    cur += segs[i];
+    if (i < segs.length - 1 && letters(cur) >= 2 && letters(segs.slice(i + 1).join('')) >= 2){ out.push(cur); cur = ''; }
+  }
+  if (cur) out.push(cur);
+  out[0] = lead + out[0]; out[out.length - 1] += tail;
+  return out;
+}
 function pgNmWrap(art){
   const list = [], vw = art.parentElement ? art.parentElement.clientWidth : 0, fsz = parseFloat(getComputedStyle(art).fontSize) || 18;
-  const maxCh = vw ? Math.floor(vw * 0.9 / (fsz * 0.56)) : 99;      // từ quá dài so với bề ngang trang (cỡ chữ rất lớn + máy rất hẹp) thì không bọc, để còn xuống dòng được
+  const maxCh = vw ? Math.floor(vw * 0.9 / (fsz * 0.56)) : 99;      // cụm quá dài so với bề ngang trang (cỡ chữ rất lớn + máy rất hẹp) thì không bọc, để còn xuống dòng được
   const w = document.createTreeWalker(art, NodeFilter.SHOW_TEXT, { acceptNode: n =>
     (/[-\u2010\u2011]/.test(n.nodeValue) && !(n.parentElement && n.parentElement.closest('sup,.vn,.dc,.fnk,.pgnm,[hidden]'))) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
   for (let n; (n = w.nextNode());) list.push(n);
@@ -4667,10 +4684,13 @@ function pgNmWrap(art){
     const t = n.nodeValue; PGNM_RE.lastIndex = 0;
     let m, pos = 0, frag = null;
     while ((m = PGNM_RE.exec(t))){
-      if (m[0].length > maxCh) continue;
       if (!frag) frag = document.createDocumentFragment();
       if (m.index > pos) frag.appendChild(document.createTextNode(t.slice(pos, m.index)));
-      const sp = document.createElement('span'); sp.className = 'pgnm'; sp.textContent = m[0]; frag.appendChild(sp);
+      pgNmGroups(m[0]).forEach((g, i) => {
+        if (i) { const wb = document.createElement('wbr'); wb.className = 'pgw'; frag.appendChild(wb); }
+        if (g.length > maxCh) { frag.appendChild(document.createTextNode(g)); return; }
+        const sp = document.createElement('span'); sp.className = 'pgnm'; sp.textContent = g; frag.appendChild(sp);
+      });
       pos = m.index + m[0].length;
     }
     if (!frag) return;
