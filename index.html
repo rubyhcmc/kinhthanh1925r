@@ -1172,7 +1172,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.19a';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.19b';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -4112,7 +4112,7 @@ const BIBLE66 = ['Sáng Thế Ký','Xuất Ê-díp-tô Ký','Lê-vi Ký','Dân S
 const BIBLE_ALIAS = [['Sáng Thế',1],['Sáng Thế Ký',1],['Xuất Hành',2],['Xuất Hành Ký',2],['Xuất Ê-díp-tô',2],['Xuất Ai Cập Ký',2],['Lê-vi',3],['Dân Số',4],['Dân Số Ký',4],['Phục Truyền',5],['Phục Truyền Luật Lệ',5],['Phục Truyền Luật Lệ Ký',5],['Giô-suê',6],['Quan Xét',7],['Các Quan Xét',7],['Ru-tơ',8],['Rút',8],
   ['I Sa-mu-ên',9],['II Sa-mu-ên',10],['I Các Vua',11],['II Các Vua',12],['I Sử Ký',13],['II Sử Ký',14],['I Sử Biên Niên',13],['II Sử Biên Niên',14],['Ê-xơ-ra',15],['Ê-xơ-rơ',15],['Nê-hê-mi',16],['Ê-xơ-tê',17],['Ê-xo-tê',17],['Gióp',18],['Thi Thiên',19],['Thánh Thi',19],['Châm Ngôn',20],['Truyền Đạo',21],['Nhã Ca',22],['Nhã Ca Ca',22],
   ['Ê-sai',23],['Ê-sa-i',23],['Giê-rê-mi',24],['Ca Thương',25],['Ê-xê-chi-ên',26],['Đa-ni-ên',27],['Ô-sê',28],['Ô-sê-a',28],['Giô-ên',29],['A-mốt',30],['Áp-đia',31],['Ap-đia',31],['Giô-na',32],['Mi-chê',33],['Na-hum',34],['Ha-ba-cúc',35],['Sô-phô-ni',36],['A-ghê',37],['A-gai',37],['Xa-cha-ri',38],['Xa-cha-ri-a',38],['Ma-la-chi',39],
-  ['Ma-thi-ơ',40],['Mát-thêu',40],['Mác',41],['Mác-cô',41],['Lu-ca',42],['Lu-ca',42],['Giăng',43],['Gioan',43],['Công Vụ',44],['Công Vụ Các Sứ Đồ',44],['Công Vụ Các Sứ Đồ',44],['Rô-ma',45],['I Cô-rinh-tô',46],['II Cô-rinh-tô',47],['Ga-la-ti',48],['Ê-phê-sô',49],['Phi-líp',50],['Phi-líp-phê',50],['Cô-lô-se',51],
+  ['Ma-thi-ơ',40],['Mát-thêu',40],['Mat',40],['Mac',41],['Lu',42],['Gi',43],['Mác',41],['Mác-cô',41],['Lu-ca',42],['Lu-ca',42],['Giăng',43],['Gioan',43],['Công Vụ',44],['Công Vụ Các Sứ Đồ',44],['Công Vụ Các Sứ Đồ',44],['Rô-ma',45],['I Cô-rinh-tô',46],['II Cô-rinh-tô',47],['Ga-la-ti',48],['Ê-phê-sô',49],['Phi-líp',50],['Phi-líp-phê',50],['Cô-lô-se',51],
   ['I Tê-sa-lô-ni-ca',52],['II Tê-sa-lô-ni-ca',53],['I Ti-mô-thê',54],['II Ti-mô-thê',55],['Tít',56],['Phi-lê-môn',57],['Hê-bơ-rơ',58],['Gia-cơ',59],['I Phi-e-rơ',60],['II Phi-e-rơ',61],['I Giăng',62],['II Giăng',63],['III Giăng',64],['Giu-đe',65],['Khải Huyền',66],['Khải Thị',66]];
 const bkKey = s => fold(s).replace(/[^a-z0-9]+/g, '').replace(/^1(?=[a-z])/, 'i').replace(/^2(?=[a-z])/, 'ii').replace(/^3(?=[a-z])/, 'iii');   // "1 Sa-mu-ên" ≡ "I Sa-mu-ên"
 const BIBLE_KEYS = (() => { const m = new Map(); BIBLE_ALIAS.forEach(([n, i]) => m.set(bkKey(n), i)); BIBLE66.forEach((n, i) => m.set(bkKey(n), i + 1)); return m; })();
@@ -4143,15 +4143,17 @@ function rpFindBook(words){   // thử từ dài đến ngắn, bỏ bớt từ 
   }
   return null;
 }
-const RP_RE = /((?:[1-3]\s*)?\p{L}[\p{L}\-.]*(?:\s+\p{L}[\p{L}\-.]*){0,5})?\s*(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–—]\s*(?:(\d{1,3})\s*:\s*)?(\d{1,3}))?((?:\s*,\s*\d{1,3}(?!\d|\s*:)(?:\s*[-–—]\s*\d{1,3}(?!\d|\s*:))?)*)/gu;
+const RP_RE = /((?:[1-3]\s*)?\p{L}[\p{L}\-.]*(?:\s+\p{L}[\p{L}\-.]*){0,5})?\s*(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–—]\s*(?:(\d{1,3})\s*:\s*)?(\d{1,3}))?((?:\s*,\s*\d{1,3}(?!\d|\s*:)(?:\s*[-–—]\s*\d{1,3}(?!\d|\s*:))?|\s*;\s*\d{1,3}(?!\d|\s*:|\s*\p{L})(?:\s*[-–—]\s*\d{1,3}(?!\d|\s*:|\s*\p{L}))?)*)/gu;
 function refsIn(text){
   const out = []; let prev = null;
   String(text || '').replace(RP_RE, (m, bk, c, v, c2, v2, extra) => {
-    let name = bk ? rpFindBook(bk.trim().split(/\s+/)) : null;
+    const bw = bk ? bk.trim().split(/\s+/) : [];
+    let name = bk ? rpFindBook(bw) : null;
+    if (!name && bw.length && /^[\p{Lu}\d]/u.test(bw[bw.length - 1])){ prev = null; return m; }   // viết tắt lạ, chưa nhận ra: KHÔNG tự gán nhầm sang sách trước đó (ví dụ "Lu 4:1" bị đọc thành Mác 4:1)
     if (!name) name = prev; if (!name) return m;
     prev = name; c = +c; v = +v;
     out.push({ name, c1:c, v1:v, c2:c2 ? +c2 : c, v2:v2 ? +v2 : v });
-    String(extra || '').replace(/,\s*(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?/g, (_, a, b) => { out.push({ name, c1:c, v1:+a, c2:c, v2:b ? +b : +a }); return _; });
+    String(extra || '').replace(/[,;]\s*(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?/g, (_, a, b) => { out.push({ name, c1:c, v1:+a, c2:c, v2:b ? +b : +a }); return _; });
     return m;
   });
   return out;
