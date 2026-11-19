@@ -354,7 +354,9 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600}
 details pre{background:var(--bg);padding:10px;border-radius:8px;overflow:auto;font-size:12px;color:var(--fg)}
 details ol{padding-left:20px;line-height:1.7}
 details a{color:var(--accent)}
-.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 70px);transform:translateX(-50%);z-index:80;
+.psmsg{margin:0 0 10px;padding:12px 14px;border-radius:12px;background:#2e7d32;color:#fff;font-size:17px;font-weight:700;line-height:1.35}
+.psmsg.err{background:#b3261e}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 70px);transform:translateX(-50%);z-index:120;
   background:#222;color:#fff;padding:8px 16px;border-radius:99px;font-size:14px;line-height:1.35;width:max-content;max-width:90vw;text-align:center}
 @media(min-width:760px){.overlay{align-items:center}.sheet{border-radius:18px}}
 .chhead.tp{min-height:0;margin:.5em 0 1.5em;align-items:center}
@@ -1035,6 +1037,7 @@ html[data-paper] .reader.print{text-align:justify}
   <div class="sheet">
     <div class="sgrab"></div>
     <div class="shead"><h3>Sao lưu &amp; khôi phục</h3><button class="sdone" id="psClose">Xong</button></div>
+    <div class="psmsg" id="psMsg" role="status" aria-live="polite" hidden></div>
     <div class="usbadge off" id="psBadge" style="font-size:17px"><span class="dot"></span><span id="psText">Đang kiểm tra…</span></div>
     <div class="psdetail" id="psDetail"></div>
 
@@ -1172,7 +1175,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.19c';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20c';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -1199,7 +1202,14 @@ let toastTimer;
 function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.style.borderRadius = String(msg).length > 44 ? '16px' : ''; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, ms || 2600); }
 /* Thông báo sau khi khôi phục dữ liệu cá nhân. Với các đường khôi phục phải tải lại app, dặn trước rồi hiện lại sau khi app mở xong. */
 const RESTORED_MSG = '“Nhật Ký Đọc Kinh Thánh” của bạn đã được khôi phục.';
-function notifyRestored(){ toast(RESTORED_MSG, 5000); }
+let psMsgT;
+function psNotice(msg, err){                         // dòng báo kết quả ngay trong bảng Sao lưu & khôi phục (toast nằm dưới bảng nên dễ bị che)
+  const b = $('#psMsg'); if (!b) return;
+  b.textContent = (err ? '⚠️ ' : '✅ ') + msg; b.classList.toggle('err', !!err); b.hidden = false;
+  try { b.scrollIntoView({ block:'nearest' }); } catch(e){}
+  clearTimeout(psMsgT); psMsgT = setTimeout(() => { b.hidden = true; }, err ? 9000 : 12000);
+}
+function notifyRestored(){ toast(RESTORED_MSG, 5000); psNotice('Đã khôi phục thành công.'); }
 function notifyRestoredAfterReload(){ try { sessionStorage.setItem('kt.restoredMsg', '1'); } catch(e){ notifyRestored(); } }
 try { if (sessionStorage.getItem('kt.restoredMsg')){ sessionStorage.removeItem('kt.restoredMsg'); setTimeout(notifyRestored, 800); } } catch(e){}
 // Thông báo có nút thao tác (vd. “Hoàn tác”), tự tắt sau 5 giây
@@ -2232,7 +2242,12 @@ const streakOf = set => { let n = 0, d = new Date(); if (!set.has(dayKey(d))) d.
 /* Tự liên kết câu Kinh Thánh trong ghi chú: "Mat 5:3", "1 Cô-rinh-tô 13:4-7", "Ma-thi-ơ 5:3; 7:12" … */
 function lsRefs(text){
   const dict = new Map();
-  bibleMeta.forEach(m => [m.name, m.abbr].forEach(n => { const k = fold(n || '').replace(/[^a-z0-9]+/g, ''); if (k) dict.set(k, m); }));
+  bibleMeta.forEach(m => [m.name, m.abbr].forEach(n => {
+    const k = fold(n || '').replace(/[^a-z0-9]+/g, ''); if (!k) return;
+    dict.set(k, m);
+    const r = /^(iii|ii|i)(?=[a-z])/.exec(k);                       // "I Giăng" cũng nhận là "1 Giăng", "II" = "2", "III" = "3"
+    if (r && /^(?:i|ii|iii)\s/i.test(fold(n).trim())) dict.set(String(r[1].length) + k.slice(r[1].length), m);
+  }));
   const t = fold(text), out = [], seen = new Set(), re = /(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?/g; let m, last = null;
   while ((m = re.exec(t))){
     const pre = t.slice(Math.max(0, m.index - 45), m.index).trim().split(/\s+/).filter(Boolean);
@@ -3276,8 +3291,10 @@ async function pushTo(A, auto){
   const r = await A.write(makePayload(books));
   SY = { sha:r.version, dirty:false, at:Date.now(), store:A.id }; saveSY();
 }
+/* Máy chỉ đọc: mở lại/quay lại app sau chừng ấy thời gian thì kiểm tra nội dung mới (trước đây 1 giờ nên sửa xong mà máy người đọc lâu mới thấy). Tệp chỉ tải lại thật sự khi vừa quá hạn; nội dung giống bản đang có thì không nhập lại gì. */
+const SYNC_FRESH_MS = 2 * 60 * 1000;
 async function syncReadOnly(A, o){
-  if (o.auto && !o.force && bibleMeta.length && SY.sha && !SY.dirty && Date.now() - SY.at < 3600 * 1000){ setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }   // đã kiểm tra trong 1 giờ qua → mở app nhanh, không tải lại vài MB (bấm “Kiểm tra cập nhật” thì bỏ qua giới hạn này)
+  if (o.auto && !o.force && bibleMeta.length && SY.sha && !SY.dirty && Date.now() - SY.at < SYNC_FRESH_MS){ setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }   // đã kiểm tra trong 1 giờ qua → mở app nhanh, không tải lại vài MB (bấm “Kiểm tra cập nhật” thì bỏ qua giới hạn này)
   const r = await A.read(), hasLocal = bibleMeta.length > 0;
   if (!r){ setSync('ok', `Trên ${A.label} chưa có dữ liệu.`); return; }
   if (r.version === SY.sha && hasLocal){ SY.at = Date.now(); saveSY(); setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }
@@ -3359,7 +3376,7 @@ async function syncNow(o = {}){
 // Tự kiểm tra nội dung mới khi mở lại app / có mạng trở lại
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && syncOn() && Date.now() - lastCheck > 60000) syncNow({ auto:true }); });
 addEventListener('online', () => { if (syncOn()) syncNow({ auto:true }); });
-setInterval(() => { if (syncOn() && document.visibilityState === 'visible' && Date.now() - lastCheck > 300000) syncNow({ auto:true }); }, 60000);
+setInterval(() => { if (syncOn() && document.visibilityState === 'visible' && Date.now() - lastCheck > SYNC_FRESH_MS) syncNow({ auto:true }); }, 60000);
 
 /* §§ ▼▼▼ MỤC 6 · QUẢN TRỊ & SAO LƯU — Đăng nhập & trang Quản lý ▼▼▼ */
 /* =========================================================
@@ -5068,15 +5085,15 @@ async function dtDownload(name){          // → true nếu đã xuất; false n
 }
 function dtExport(){                          // một chạm: tự đặt tên theo ngày, không hỏi gì thêm
   const f = dtClean(dtDefName(true));
-  return dtDownload(f).then(ok => { if (ok) toast('💾 Đã lưu file ' + f); return ok; });
+  return dtDownload(f).then(ok => { if (ok){ toast('💾 Đã lưu file ' + f); psNotice('Đã lưu file thành công: ' + f); } return ok; });
 }
 const dtKeyL = x => `${x.book}|${x.ch}|${compressRange(x.ns || [x.n])}`;
 async function dtImport(file){
-  let j; try { j = JSON.parse(await file.text()); } catch(e){ return toast('File không đọc được (không phải JSON hợp lệ)'); }
+  let j; try { j = JSON.parse(await file.text()); } catch(e){ { psNotice('Chưa khôi phục được: file không đọc được.', true); return toast('File không đọc được (không phải JSON hợp lệ)'); } }
   return dtApply(j, 'Tệp này');
 }
 async function dtApply(j, srcName){          // khôi phục từ một đối tượng dữ liệu (file JSON hoặc bản sao lưu trong máy)
-  if (!j || j.app !== 'kinhthanh' || j.kind !== 'user-data') return toast('Đây không phải file sao lưu của app này');
+  if (!j || j.app !== 'kinhthanh' || j.kind !== 'user-data') { psNotice('Chưa khôi phục được: đây không phải file sao lưu của app này.', true); return toast('Đây không phải file sao lưu của app này'); }
   const reads = j.reads && typeof j.reads === 'object' && !Array.isArray(j.reads) ? j.reads : {}, lessons = Array.isArray(j.lessons) ? j.lessons : [], marks = Array.isArray(j.marks) ? j.marks : [];
   const days = Object.keys(reads).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k) && Array.isArray(reads[k]));
   const L = lessons.filter(x => x && x.book && x.ch >= 1 && typeof x.text === 'string'), M = marks.filter(x => x && x.book && x.ch >= 1 && x.n >= 1);
@@ -5109,11 +5126,13 @@ async function dtReset(){
   await PStore.safety('Lưu tạm trước khi xóa lịch sử đọc');
   RD = {}; try { localStorage.removeItem('kt.reads'); } catch(e){}
   toast('Đã làm mới hành trình đọc');
+  psNotice('Đã làm mới hành trình đọc thành công.');
 }
-$('#dtExport').onclick = dtExport;
+$('#dtExport').onclick = () => { Promise.resolve(dtExport()).catch(e => psNotice('Chưa lưu được file: ' + ((e && e.message) || e), true)); };
 $('#dtImport').onclick = () => $('#dtFile').click();
 $('#dtFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) dtImport(f); };
 $('#dtReset').onclick = dtReset;
+{ const c = $('#psClose'); if (c) c.addEventListener('click', () => { const b = $('#psMsg'); if (b) b.hidden = true; }); }
 
 /* §§ ▼▼▼ MỤC 2 · ĐIỀU KHIỂN & CẢM ỨNG — Chữ lớn · hướng dẫn lần đầu · chia sẻ câu thành ảnh ▼▼▼ */
 /* =========================================================
@@ -6366,7 +6385,7 @@ PStore.init();
   }
   window.addEventListener('load', function(){ setTimeout(check, 3500); });
   window.addEventListener('online', function(){ setTimeout(check, 1500); });
-  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) check(); });
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && Date.now() - lastCheck > 5 * 60000) check(); });
 })();
 </script>
 </body>
