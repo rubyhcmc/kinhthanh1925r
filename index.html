@@ -1175,7 +1175,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20c';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20d';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -2387,10 +2387,22 @@ window.addEventListener('openLesson', e => {
   const d = e.detail || {}, book = d.book, ch = d.ch, ns = (d.ns || [d.n]).filter(Boolean);
   if (!ns.length) return;
   const key = compressRange(ns), n = ns[0];
-  const data = (curBook && curBook.name === book && curBook.chapters[ch - 1]) || [];
-  let quote = ns.map(k => { const v = data.find(x => x.n === k); if (v) return v.t.replace(/\s+/g, ' ').trim(); const el = $('#v' + k); return el ? el.textContent.replace(/^\s*\d+\s*/, '').replace(/\s+/g, ' ').trim() : ''; }).filter(Boolean).join(' ');
+  const same = !!(curBook && curBook.name === book);              // chỉ lấy chữ từ màn hình khi đang đọc đúng sách này (tránh lấy nhầm câu của sách khác)
+  const data = (same && curBook.chapters[ch - 1]) || [];
+  const quoteOf = dat => ns.map(k => { const v = dat.find(x => x.n === k); return v ? v.t.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim() : ''; }).filter(Boolean).join(' ');
+  let quote = quoteOf(data);
+  if (!quote && same) quote = ns.map(k => { const el = $('#v' + k); return el ? el.textContent.replace(/^\s*\d+\s*/, '').replace(/\s+/g, ' ').trim() : ''; }).filter(Boolean).join(' ');
   const old = LS.find(x => x.book === book && x.ch === ch && compressRange(x.ns || [x.n]) === key);
   lsCur = { book, ch, n, ns, key, quote, old, back:!!d.back };
+  if (!same){                                                      // đang đọc sách khác: lấy đúng câu từ kho dữ liệu rồi điền vào
+    const me = lsCur;
+    dbGet('books', book).then(rec => {
+      if (lsCur !== me) return;
+      const q = quoteOf((rec && rec.chapters && rec.chapters[ch - 1]) || []);
+      me.quote = q; $('#lsVerse').textContent = q;
+      if (me.mode === 'view') lsMode('view');
+    }).catch(() => {});
+  }
   $('#lsRef').textContent = `${book} ${ch}:${key}`;
   $('#lsVerse').textContent = quote;
   lsTa.value = old ? old.text : '';
