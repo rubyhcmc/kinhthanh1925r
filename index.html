@@ -211,6 +211,7 @@ html[data-paper] .v.flash .vn{background:#000;color:#f4f3ee;box-shadow:0 0 0 2px
 .sec .ref{display:block;font-weight:400;font-style:italic;font-size:.8em;color:var(--muted);margin-top:.15em}
 .hd{margin:1.5em 0 .6em;text-align:center}
 .hd .sec,.hd .sec2,.hd .ref1{margin:0}
+.hd .secn{margin-top:.5em}
 .sec2{font-size:.9em;font-weight:400;font-style:normal;color:var(--fg);line-height:1.4;margin-top:.35em}   /* dòng dưới tiêu đề (dòng # thứ 2 trở đi): chữ thường, nhỏ hơn mục lớn — giống sách in (Thi-thiên: tiêu đề đậm, dòng mô tả bên dưới không đậm) */
 .ref1{font-style:italic;font-size:.8em;color:var(--muted)}
 .para{margin:0 0 .75em}
@@ -542,6 +543,20 @@ details.adv>div>.srow{border-top:1px solid var(--line)}
 .igsw{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .igsw button{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);padding:0}
 .igsw button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.sgroup.safe .safebox{margin:0;padding:14px 14px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:rgba(217,119,6,.10);border-left:4px solid rgba(217,119,6,.6)}
+.sgroup.safe .safebox.ok{background:rgba(46,125,50,.09);border-left-color:#2e7d32}
+.safehd{display:flex;gap:12px;align-items:center}
+.safeico{font-size:28px;line-height:1}
+.safehd b{display:block;font-size:17px;color:var(--fg)}
+.safesum{display:none;font-size:13.5px;color:var(--muted);margin-top:2px}
+.sgroup.safe .safebox .ust{margin-top:10px;font-size:15px;font-weight:700;line-height:1.4}
+.sgroup.safe .safebox .btn{width:100%;margin-top:12px;padding:14px;font-size:17px;font-weight:700}
+.safesub{display:block;font-size:13.5px;color:var(--muted);margin-top:2px}
+.safenote{margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
+.sgroup.safe .updrow2 .stxt{display:block}
+.sgroup.safe .updrow2 .updmsg{margin:0;min-height:0}
+.sgroup.safe .updrow2 .btn{width:100%;padding:12px;font-size:16px}
+.sgroup.safe .abver{margin:0;padding:12px;border-top:1px solid var(--line)}
 .updwarn{margin-top:18px;padding:12px 14px;border-radius:12px;border:1px solid rgba(217,119,6,.45);border-left-width:4px;background:rgba(217,119,6,.10);text-align:left}
 .updwarn b{display:block;font-size:14px;color:var(--fg)}
 .updwarn p{margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--fg)}
@@ -1001,14 +1016,6 @@ html[data-paper] .reader.print{text-align:justify}
       </details>
     </div>
 
-    <div class="slabel">Dữ liệu của tôi</div>
-    <div class="sgroup">
-      <div class="srow"><div class="stxt"><b>Sao lưu &amp; khôi phục</b><span id="psSum">Giữ an toàn ghi chú, kế hoạch, dấu trang</span></div>
-        <button class="sbtn" id="psOpen">Mở</button></div>
-      <div class="srow"><div class="stxt"><b>Sao lưu tự động</b><span id="usSum">Tự động sao lưu ghi chú, kế hoạch, dấu trang</span></div>
-        <button class="sbtn" id="usOpen">Mở</button></div>
-    </div>
-
     <div class="slabel">Giới thiệu</div>
     <div class="sgroup about">
       <div class="abhead">
@@ -1017,13 +1024,22 @@ html[data-paper] .reader.print{text-align:justify}
       </div>
       <div class="abtxt" id="abText"></div>
       <div class="abfeatbox"><ul class="abfeat" id="abFeat"></ul></div>
-      <div class="updwarn" id="updWarn">
-        <b>⚠ Sao lưu trước khi cập nhật</b>
-        <p>Hãy lưu một bản sao lưu ra <b style="display:inline">file JSON</b> trước khi cập nhật phiên bản. Nếu chưa sao lưu, ghi chú, kế hoạch đọc và dấu trang của bạn có thể bị mất khi có sự cố.</p>
+    </div>
+
+    <div class="slabel">Sao lưu &amp; cập nhật</div>
+    <div class="sgroup safe">
+      <div class="safebox updwarn" id="updWarn">
+        <div class="safehd"><span class="safeico" aria-hidden="true">🛡️</span><div><b>Giữ an toàn ghi chú của bạn</b><span id="psSum" class="safesum"></span><span class="safesub">Ghi chú, kế hoạch đọc, dấu trang</span></div></div>
         <div class="ust" id="updBkSt"></div>
-        <button class="btn primary" id="updBkNow">💾 Sao lưu ra file JSON ngay</button>
+        <button class="btn primary" id="updBkNow">💾 Lưu một bản sao lưu ngay</button>
+        <p class="safenote">Chỉ một chạm. Nên làm trước mỗi lần cập nhật và mỗi tháng một lần.</p>
       </div>
-      <div class="updwrap"><button class="btn" id="btnUpd">🔄 Kiểm tra cập nhật</button><div class="updmsg" id="updMsg" aria-live="polite"></div></div>
+      <div class="srow"><div class="stxt"><b>📂 Khôi phục dữ liệu</b><span>Lấy lại từ tệp đã lưu hoặc từ bản máy tự lưu mỗi ngày</span></div>
+        <button class="sbtn" id="psOpen">Mở</button></div>
+      <div class="srow"><div class="stxt"><b>Sao lưu tự động</b><span id="usSum">Tự động sao lưu ghi chú, kế hoạch, dấu trang</span></div>
+        <button class="sbtn" id="usOpen">Mở</button></div>
+      <div class="srow col updrow2"><div class="stxt"><b>🔄 Cập nhật ứng dụng</b><span>Bấm để xem có phiên bản mới không. Nếu có, app sẽ nhắc bạn sao lưu trước.</span></div>
+        <button class="btn" id="btnUpd">Kiểm tra cập nhật</button><div class="updmsg" id="updMsg" aria-live="polite"></div></div>
       <div id="verTag" class="abver"></div>
     </div>
 
@@ -1175,7 +1191,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20d';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20f';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3642,11 +3658,13 @@ function secHTML(h, fm){
   const ls = String(h).split('\n').map(s => s.trim()).filter(Boolean);
   const isRef = l => /^\([^()]*\)$/.test(l);
   const multi = ls.filter(l => !isRef(l)).length > 1;        // nhiều dòng: dòng đầu = mục lớn, các dòng sau = tiểu mục
-  let k = 0;
+  let k = 0, prevRef = false;
   return '<div class="hd">' + ls.map(l => {
-    if (isRef(l)) return `<div class="ref1">${esc(l)}</div>`;
-    const big = !multi || k === 0; k++;                      // tiêu đề một dòng = mục lớn
-    const tag = big ? 'h3' : 'h4', cls = big ? 'sec' : 'sec2';
+    if (isRef(l)){ prevRef = true; return `<div class="ref1">${esc(l)}</div>`; }
+    const afterRange = prevRef && k > 0; prevRef = false;    // “Nhóm / (Từ đoạn … đến …) / Tiêu đề mục”: dòng sau dòng phạm vi là tiêu đề mục thật → đậm như các mục khác
+    if (/\((?:Từ\s|\d)[^()]*\)\s*$/.test(l)) prevRef = true;  // dòng đầu có kèm phạm vi “(Từ đoạn 1 đến 11:9)” → dòng kế tiếp cũng là tiêu đề mục thật
+    const big = !multi || k === 0 || afterRange; k++;        // tiêu đề một dòng = mục lớn
+    const tag = big ? 'h3' : 'h4', cls = big ? (afterRange ? 'sec secn' : 'sec') : 'sec2';
     const m = l.match(/^(.*?)\s*(\([^()]*\))\s*$/);
     return m && m[1] ? `<${tag} class="${cls}">${tx(m[1])}<span class="ref">${esc(m[2])}</span></${tag}>`
                      : `<${tag} class="${cls}">${tx(l)}</${tag}>`;
