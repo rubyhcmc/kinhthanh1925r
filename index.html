@@ -1203,7 +1203,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20h';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20i';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3251,6 +3251,17 @@ async function sameOriginFetch(){
     return /^\s*[\[{]/.test(text.replace(/^\uFEFF/, '')) ? text : null;                      // không phải JSON (trang lỗi, bản cũ…) → bỏ, dùng đường dự phòng
   } catch(e){ return null; }
 }
+/* Bản MỚI NHẤT thật sự: hỏi thẳng GitHub (không qua bộ nhớ đệm của trang web), để thiết bị luôn lấy đúng tệp bạn vừa sửa. Không được (hết lượt/không mạng) → trả null, dùng đường cũ. */
+async function freshFetch(){
+  if (!GH.repo) return null;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH.repo}/contents/${ghFile()}${ghRef()}`, { cache:'no-store', headers:{ Accept:'application/vnd.github.raw+json' } });
+    if (!res.ok) return null;
+    const text = await res.text();
+    if (!/^\s*[\[{]/.test(text.replace(/^\uFEFF/, ''))) return null;
+    dataCachePut(text); return text;
+  } catch(e){ return null; }
+}
 async function rawFetch(){
   const own = await sameOriginFetch(); if (own !== null) return own;
   const ref = GH.branch ? encodeURIComponent(GH.branch) : 'HEAD';
@@ -3299,8 +3310,11 @@ const GitHubStore = Store.register({
   describe: () => 'Kho: ' + GH.repo,
   shareUrl: () => location.origin + location.pathname + '?kho=' + GH.repo,
   async head(){ const r = await ghRemote(); return r ? { version:r.sha } : null; },
-  async read(){
-    if (!this.canWrite()){ const text = await rawFetch(); return { version:sigOf(text), payload:parseRemote(text) }; }
+  async read(opt){
+    if (!this.canWrite()){
+      if (opt && opt.fresh){ const f = await freshFetch(); if (f) return { version:sigOf(f), payload:parseRemote(f), fresh:true }; if (opt.only) return null; }
+      const text = await rawFetch(); return { version:sigOf(text), payload:parseRemote(text) };
+    }
     const h = await ghRemote(); if (!h) return null;
     const res = await ghReq(`/repos/${GH.repo}/contents/${ghFile()}${ghRef()}`, { raw:true });
     return { version:h.sha, payload:parseRemote(await res.text()) };
@@ -3352,7 +3366,10 @@ async function pushTo(A, auto){
 const SYNC_FRESH_MS = 2 * 60 * 1000;
 async function syncReadOnly(A, o){
   if (o.auto && !o.force && bibleMeta.length && SY.sha && !SY.dirty && Date.now() - SY.at < SYNC_FRESH_MS){ setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }   // đã kiểm tra trong 1 giờ qua → mở app nhanh, không tải lại vài MB (bấm “Kiểm tra cập nhật” thì bỏ qua giới hạn này)
-  const r = await A.read(), hasLocal = bibleMeta.length > 0;
+  let r = await A.read({ fresh:!!o.force }), hasLocal = bibleMeta.length > 0;
+  if (r && !r.fresh && hasLocal && SY.sha && r.version !== SY.sha){      // thấy “khác” → hỏi lại GitHub cho chắc, tránh ghi đè bản mới bằng bản cũ còn kẹt trong bộ nhớ đệm
+    try { const f = await A.read({ fresh:true, only:true }); if (f) r = f; } catch(e){}
+  }
   if (!r){ setSync('ok', `Trên ${A.label} chưa có dữ liệu.`); return; }
   if (r.version === SY.sha && hasLocal){ SY.at = Date.now(); saveSY(); setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }
   if (!normBible((r.payload || {}).bible || r.payload || {}).length) throw new Error(`Dữ liệu trên ${A.label} chưa có nội dung Kinh Thánh.`);
