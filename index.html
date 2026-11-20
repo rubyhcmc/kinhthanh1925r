@@ -1203,7 +1203,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20i';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20j';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3568,6 +3568,7 @@ $('#btnUpd').onclick = async () => {
         if (i === 0){ try { await dtExport(); } catch(e){} window.updBkRefresh(); say('Đã sao lưu. Bấm "Kiểm tra cập nhật" lần nữa để cập nhật.'); btn.disabled = false; return; }
         if (i !== 1){ say('Đã hoãn cập nhật (có bản mới ' + m[1] + ').'); btn.disabled = false; return; }
       }
+      say('Có bản mới ' + m[1] + ' – đang lưu tạm dữ liệu của bạn…'); try { await PStore.safety('Lưu tạm trước khi cập nhật app ' + APP_VERSION + ' → ' + m[1]); } catch(e){}
       say('Có bản mới ' + m[1] + ' – đang xoá bản cũ và tải bản mới…'); await ktPurgeShell(); setTimeout(() => location.replace(u.href), 500); return;
     }
   } catch(e){ say('Không kiểm tra được: ' + (e.message || e)); }
