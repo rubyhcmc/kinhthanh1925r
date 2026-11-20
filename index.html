@@ -667,6 +667,16 @@ html[data-paper] .v.hold{-webkit-text-stroke:.6px currentColor}
 .lshead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .lshead .lslabel{margin:0}
 .lslabel{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.lstools{display:flex;gap:6px;flex:none}
+.lsvt{display:block;margin:6px 0 0;padding:4px 0;border:0;background:none;color:var(--accent);font:700 13px var(--sans)}
+.lsverse.clamp{max-height:calc(1.65em * 3);overflow:hidden}
+.lsverse.clamp::after{content:'…'}
+.lstop{max-height:44%}
+.lspanel{height:min(94vh,94dvh);max-width:640px}
+.lsbody textarea{min-height:200px;padding:16px 16px;font-size:17px;line-height:1.7;font-family:var(--serif,Georgia,serif)}
+.lscount{flex:none;text-align:right;margin:6px 4px 0;font:12px var(--sans);color:var(--muted)}
+.lspanel.viewing .lscount{display:none}
+.lspanel:focus-within .lsnote{display:none}
 .lsbody textarea{flex:1;min-height:120px;width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg);font:inherit;font-size:16px;line-height:1.6;resize:none}
 .lsread{flex:1;min-height:120px;overflow:auto;overscroll-behavior:contain;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 .lsrtxt{font-family:var(--serif);font-size:calc(var(--fs) - 1px);line-height:1.7;color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}
@@ -1118,10 +1128,11 @@ html[data-paper] .reader.print{text-align:justify}
 <div class="lssheet" id="lsSheet" hidden>
   <div class="lspanel" role="dialog" aria-modal="true" aria-label="Viết bài học cá nhân">
     <div class="lsgrip"></div>
-    <div class="lstop"><div class="lsref" id="lsRef"></div><p class="lsverse" id="lsVerse"></p></div>
+    <div class="lstop"><div class="lsref" id="lsRef"></div><p class="lsverse" id="lsVerse"></p><button type="button" class="lsvt" id="lsVT" hidden>Xem đủ câu ▾</button></div>
     <div class="lsbody">
-      <div class="lshead"><label class="lslabel" for="lsText" id="lsLbl">Bài học cá nhân</label><button type="button" class="sbtn" id="lsWord">📄 Xuất Word</button></div>
+      <div class="lshead"><label class="lslabel" for="lsText" id="lsLbl">Bài học cá nhân</label><span class="lstools" id="lsTools"><button type="button" class="sbtn" id="lsCopy">📋 Sao chép</button><button type="button" class="sbtn" id="lsWord">📄 Xuất Word</button></span></div>
       <textarea id="lsText" placeholder="Điều Chúa dạy bạn qua đoạn này…" autocomplete="off"></textarea>
+      <div class="lscount" id="lsCount"></div>
       <div class="lsread" id="lsRead" hidden></div>
       <div class="lslinks" id="lsLinks" hidden></div>
       <p class="lsnote">📍 Ghi chú được lưu trong máy, xem lại ở nút <b>✎ Bài học cá nhân</b> trên đầu trang.</p>
@@ -1191,7 +1202,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20f';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20g';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -2387,11 +2398,11 @@ function lsMode(m){
   const v = m === 'view'; lsCur.mode = m;
   lsTa.hidden = v; $('.lspanel', lsEl).classList.toggle('viewing', v); $('#lsRead').hidden = !v; $('#lsSave').hidden = v; $('#lsEdit').hidden = !v;
   $('#lsLbl').textContent = v ? 'Bài học của bạn' : 'Bài học cá nhân';
-  $('.lshead', lsEl).appendChild($('#lsWord'));                  // luôn đưa nút Xuất Word về hàng nhãn trước (tránh bị xóa theo vùng xem khi vẽ lại)
+  $('.lshead', lsEl).appendChild($('#lsTools'));                  // luôn đưa nút Xuất Word về hàng nhãn trước (tránh bị xóa theo vùng xem khi vẽ lại)
   if (v){
     const o = lsCur.old, long = (lsCur.quote || '').length > 150;
     $('#lsRead').innerHTML = `<div class="lspage"><div class="lsphead"><div class="lspref">${esc($('#lsRef').textContent)}</div></div><p class="lspq${long ? ' clamp' : ''}" id="lsPq">${esc(lsCur.quote || '')}</p>${long ? '<button type="button" class="lsmore" id="lsMore">Xem đủ câu gốc ▾</button>' : ''}<hr class="lsprule"><div class="lsrtxt">${esc(lsTa.value.trim())}</div></div>` + (o ? `<div class="lsrmeta">Cập nhật ${esc(bmWhen(o.at))}</div>` : '');
-    $('.lsphead', $('#lsRead')).appendChild($('#lsWord'));       // xem: nút Xuất Word nằm cùng hàng với địa chỉ câu, đỡ tốn một dòng
+    $('.lsphead', $('#lsRead')).appendChild($('#lsTools'));       // xem: nút Xuất Word nằm cùng hàng với địa chỉ câu, đỡ tốn một dòng
     const mb = $('#lsMore'); if (mb) mb.onclick = () => { const q = $('#lsPq'), open = q.classList.toggle('clamp') === false; mb.textContent = open ? 'Thu gọn câu gốc ▴' : 'Xem đủ câu gốc ▾'; };
     $('#lsRead').scrollTop = 0; try { lsTa.blur(); } catch(e){}
   }
@@ -2415,13 +2426,13 @@ window.addEventListener('openLesson', e => {
     dbGet('books', book).then(rec => {
       if (lsCur !== me) return;
       const q = quoteOf((rec && rec.chapters && rec.chapters[ch - 1]) || []);
-      me.quote = q; $('#lsVerse').textContent = q;
+      me.quote = q; $('#lsVerse').textContent = q; lsVerseFit();
       if (me.mode === 'view') lsMode('view');
     }).catch(() => {});
   }
   $('#lsRef').textContent = `${book} ${ch}:${key}`;
-  $('#lsVerse').textContent = quote;
-  lsTa.value = old ? old.text : '';
+  $('#lsVerse').textContent = quote; lsVerseFit();
+  lsTa.value = old ? old.text : ''; lsCountUpdate();
   $('#lsDel').hidden = !old;
   lsRender();
   lsMode(old ? 'view' : 'edit');                                // bài học cũ: mở chế độ xem · bài học mới: mở chế độ soạn
@@ -2448,7 +2459,24 @@ $('#lsEdit').onclick = () => {
   lsMode('edit'); lsTa.focus();
   try { const n = lsTa.value.length; lsTa.setSelectionRange(n, n); } catch(e){}
 };
-let lsRT; lsTa.addEventListener('input', () => { clearTimeout(lsRT); lsRT = setTimeout(lsRender, 250); });
+function lsCountUpdate(){ const t = lsTa.value.trim(), w = t ? t.split(/\s+/).length : 0; $('#lsCount').textContent = w ? w + ' chữ · ' + t.length + ' ký tự' : ''; }
+function lsVerseFit(){                                           // câu dài: thu gọn 3 dòng cho rộng chỗ soạn, bấm để xem đủ
+  const v = $('#lsVerse'), b = $('#lsVT'), long = (v.textContent || '').length > 150;
+  v.classList.toggle('clamp', long); b.hidden = !long; b.textContent = 'Xem đủ câu ▾';
+}
+$('#lsVT').onclick = () => { const v = $('#lsVerse'), open = v.classList.toggle('clamp') === false; $('#lsVT').textContent = open ? 'Thu gọn câu ▴' : 'Xem đủ câu ▾'; };
+async function lsCopyText(text){
+  try { await navigator.clipboard.writeText(text); return true; } catch(e){}
+  try { const t = document.createElement('textarea'); t.value = text; t.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(t); t.focus(); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch(e){ return false; }
+}
+$('#lsCopy').onclick = async () => {
+  const note = lsTa.value.trim(); if (!note || !lsCur) return toast('Chưa có nội dung ghi chú để sao chép');
+  const i = await choose('Sao chép', 'Bạn muốn sao chép phần nào?', [{ t:'Cả câu Kinh Thánh và ghi chú', cls:'primary' }, { t:'Chỉ phần ghi chú' }, { t:'Hủy' }]);
+  if (i !== 0 && i !== 1) return;
+  const ok = await lsCopyText(i === 0 ? lsShareText() : note);
+  toast(ok ? '📋 Đã sao chép thành công' : 'Chưa sao chép được trên máy này');
+};
+let lsRT; lsTa.addEventListener('input', () => { lsCountUpdate(); clearTimeout(lsRT); lsRT = setTimeout(lsRender, 250); });
 $('#lsLinks').addEventListener('click', async e => {         // chạm chip: tự lưu rồi mở câu / ghi chú liên quan
   const r = e.target.closest('[data-ref]'), l = e.target.closest('[data-rel]');
   if (r){ const x = lsCur.refs[+r.dataset.ref]; if (lsPersist()) toast('Đã lưu ghi chú'); lsCur.back = false; lsClose(); await goBookmark({ book:x.book, ch:x.ch, n:x.ns[0] }); }
