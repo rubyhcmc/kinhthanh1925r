@@ -543,20 +543,24 @@ details.adv>div>.srow{border-top:1px solid var(--line)}
 .igsw{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .igsw button{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);padding:0}
 .igsw button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.sgroup.safe .safebox{margin:0;padding:14px 14px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:rgba(217,119,6,.10);border-left:4px solid rgba(217,119,6,.6)}
-.sgroup.safe .safebox.ok{background:rgba(46,125,50,.09);border-left-color:#2e7d32}
-.safehd{display:flex;gap:12px;align-items:center}
-.safeico{font-size:28px;line-height:1}
-.safehd b{display:block;font-size:17px;color:var(--fg)}
-.safesum{display:none;font-size:13.5px;color:var(--muted);margin-top:2px}
-.sgroup.safe .safebox .ust{margin-top:10px;font-size:15px;font-weight:700;line-height:1.4}
-.sgroup.safe .safebox .btn{width:100%;margin-top:12px;padding:14px;font-size:17px;font-weight:700}
-.safesub{display:block;font-size:13.5px;color:var(--muted);margin-top:2px}
-.safenote{margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
-.sgroup.safe .updrow2 .stxt{display:block}
-.sgroup.safe .updrow2 .updmsg{margin:0;min-height:0}
-.sgroup.safe .updrow2 .btn{width:100%;padding:12px;font-size:16px}
-.sgroup.safe .abver{margin:0;padding:12px;border-top:1px solid var(--line)}
+.sgroup.safe [hidden]{display:none!important}
+.sgroup.safe .srow{min-height:64px}
+.sgroup.safe .stxt b{display:block;font-size:16px;line-height:1.3}
+.sgroup.safe .stxt span{display:block;font-size:13px;line-height:1.35;color:var(--muted);margin-top:2px}
+.sgroup.safe .bk{gap:12px}
+.sgroup.safe .bk .stxt b{font-size:15px}
+.sgroup.safe .bkdot{flex:none;width:12px;height:12px;border-radius:50%;background:#d97706;box-shadow:0 0 0 4px rgba(217,119,6,.18)}
+.sgroup.safe .bk.ok .bkdot{background:#2e7d32;box-shadow:0 0 0 4px rgba(46,125,50,.18)}
+.sgroup.safe .bk .stxt{flex:1;min-width:0}
+.sgroup.safe .sbtn{flex:none;min-width:84px;padding:10px 14px;font-size:15px;font-weight:700}
+.sgroup.safe .sbtn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+[data-theme=dark] .sgroup.safe .sbtn.pri{color:#1a1409}
+.sgroup.safe .nav{width:100%;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.sgroup.safe .nav .chev{flex:none;font-size:26px;color:var(--muted);line-height:1}
+.sgroup.safe .srow+.srow,.sgroup.safe .srow+.nav{border-top:1px solid var(--line)}
+.sgroup.safe .updmsg{margin:0;padding:0 16px 12px;min-height:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.sgroup.safe .updmsg:empty{display:none}
+.sgroup.safe .updwarn{margin:0;padding:12px 16px;border:0;border-radius:0;background:none}
 .updwarn{margin-top:18px;padding:12px 14px;border-radius:12px;border:1px solid rgba(217,119,6,.45);border-left-width:4px;background:rgba(217,119,6,.10);text-align:left}
 .updwarn b{display:block;font-size:14px;color:var(--fg)}
 .updwarn p{margin:6px 0 0;font-size:12.5px;line-height:1.5;color:var(--fg)}
@@ -1038,19 +1042,16 @@ html[data-paper] .reader.print{text-align:justify}
 
     <div class="slabel">Sao lưu &amp; cập nhật</div>
     <div class="sgroup safe">
-      <div class="safebox updwarn" id="updWarn">
-        <div class="safehd"><span class="safeico" aria-hidden="true">🛡️</span><div><b>Giữ an toàn ghi chú của bạn</b><span id="psSum" class="safesum"></span><span class="safesub">Ghi chú, kế hoạch đọc, dấu trang</span></div></div>
-        <div class="ust" id="updBkSt"></div>
-        <button class="btn primary" id="updBkNow">💾 Lưu một bản sao lưu ngay</button>
-        <p class="safenote">Chỉ một chạm. Nên làm trước mỗi lần cập nhật và mỗi tháng một lần.</p>
+      <div class="srow bk updwarn" id="updWarn">
+        <span class="bkdot" aria-hidden="true"></span>
+        <div class="stxt"><b id="updBkSt">Đang kiểm tra…</b><span><span id="psSum" hidden></span>Ghi chú, kế hoạch đọc, dấu trang</span></div>
+        <button class="sbtn pri" id="updBkNow" type="button">Sao lưu</button>
       </div>
-      <div class="srow"><div class="stxt"><b>📂 Khôi phục dữ liệu</b><span>Lấy lại từ tệp đã lưu hoặc từ bản máy tự lưu mỗi ngày</span></div>
-        <button class="sbtn" id="psOpen">Mở</button></div>
-      <div class="srow"><div class="stxt"><b>Sao lưu tự động</b><span id="usSum">Tự động sao lưu ghi chú, kế hoạch, dấu trang</span></div>
-        <button class="sbtn" id="usOpen">Mở</button></div>
-      <div class="srow col updrow2"><div class="stxt"><b>🔄 Cập nhật ứng dụng</b><span>Bấm để xem có phiên bản mới không. Nếu có, app sẽ nhắc bạn sao lưu trước.</span></div>
-        <button class="btn" id="btnUpd">Kiểm tra cập nhật</button><div class="updmsg" id="updMsg" aria-live="polite"></div></div>
-      <div id="verTag" class="abver"></div>
+      <button class="srow nav" id="psOpen" type="button"><div class="stxt"><b>Khôi phục dữ liệu</b><span>Từ tệp đã lưu hoặc bản máy tự lưu mỗi ngày</span></div><span class="chev" aria-hidden="true">›</span></button>
+      <button class="srow nav" id="usOpen" type="button"><div class="stxt"><b>Sao lưu tự động</b><span id="usSum">Tự động sao lưu ghi chú, kế hoạch, dấu trang</span></div><span class="chev" aria-hidden="true">›</span></button>
+      <div class="srow upd"><div class="stxt"><b>Cập nhật ứng dụng</b><span id="verTag"></span></div>
+        <button class="sbtn" id="btnUpd" type="button">Kiểm tra</button></div>
+      <div class="updmsg" id="updMsg" aria-live="polite"></div>
     </div>
 
     <!-- Chế độ chỉ đọc: không có nút quản trị công khai. Quản trị viên mở bảng đăng nhập bằng cách chạm 5 lần liên tiếp vào chữ “Cài đặt” hoặc tên ứng dụng. -->
@@ -1202,7 +1203,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20g';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20h';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3509,10 +3510,10 @@ window.updBkRefresh = () => {
   let r = { has:false, exportAt:0, ago:'chưa lần nào', stale:true }; try { r = PStore.status(); } catch(e){}
   const fresh = r.exportAt && Date.now() - r.exportAt < 864e5;      // sao lưu trong 24 giờ gần nhất
   w.classList.toggle('ok', !r.has || !!fresh);
-  st.textContent = !r.has ? 'Hiện chưa có dữ liệu cá nhân nào cần sao lưu.'
-    : !r.exportAt ? '⚠ Bạn CHƯA sao lưu ra file lần nào. Hãy sao lưu trước khi cập nhật!'
-    : fresh ? '✔ Đã sao lưu file ' + r.ago + '. Nếu vừa thêm ghi chú mới, hãy sao lưu lại.'
-    : '⚠ Lần sao lưu file gần nhất: ' + r.ago + '. Nên sao lưu lại trước khi cập nhật.';
+  st.textContent = !r.has ? 'Chưa có dữ liệu cần sao lưu'
+    : !r.exportAt ? '⚠ Chưa sao lưu lần nào'
+    : fresh ? '✔ Đã sao lưu ' + r.ago
+    : '⚠ Lần sao lưu gần nhất: ' + r.ago;
 };
 $('#updBkNow').onclick = async () => { try { await dtExport(); } catch(e){ toast('Chưa sao lưu được: ' + (e.message || e)); } window.updBkRefresh(); };
 /* Khi cập nhật sang bản mới: xoá sạch phần "vỏ app" cũ mà iPhone đã lưu (các bản lưu tạm của index.html, sw.js… trong Cache Storage) và gỡ bộ nền cũ,
