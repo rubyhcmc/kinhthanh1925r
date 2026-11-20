@@ -1203,7 +1203,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.20j';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.20k';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3262,6 +3262,15 @@ async function freshFetch(){
     dataCachePut(text); return text;
   } catch(e){ return null; }
 }
+/* “Dấu vân tay” của tệp trên GitHub (rất nhẹ, không qua bộ nhớ đệm): đổi khi và chỉ khi tệp trên GitHub được sửa. Dùng để biết chắc có bản mới hay không. */
+async function freshMeta(){
+  if (!GH.repo) return '';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GH.repo}/contents/${ghFile()}${ghRef()}`, { cache:'no-store', headers:{ Accept:'application/vnd.github+json' } });
+    if (!res.ok) return '';
+    const j = await res.json(); return (j && typeof j.sha === 'string') ? j.sha : '';
+  } catch(e){ return ''; }
+}
 async function rawFetch(){
   const own = await sameOriginFetch(); if (own !== null) return own;
   const ref = GH.branch ? encodeURIComponent(GH.branch) : 'HEAD';
@@ -3342,7 +3351,7 @@ async function applyRemote(A, r){
   const j = r.payload || {}, books = normBible(j.bible || j);
   if (!books.length) throw new Error(`Dữ liệu trên ${A.label} chưa có nội dung Kinh Thánh.`);
   await importBible(books, 'replace'); applyAbout(j.about); applyArch(j.archDict);
-  SY = { sha:r.version, dirty:false, at:Date.now(), store:A.id }; saveSY();
+  SY = { sha:r.version, blob:r.blob || '', dirty:false, at:Date.now(), store:A.id }; saveSY();
   const y = SCR.scrollTop, kb = curBook && curBook.name, kc = S.chapter, kn = parseInt(curVerseNo(), 10) || 0;
   await reloadAll(); SCR.scrollTop = y;
   if (kn > 1 && curBook && curBook.name === kb && S.chapter === kc){          // tải dữ liệu mới về vẫn giữ đúng câu đang đọc
@@ -3366,12 +3375,15 @@ async function pushTo(A, auto){
 const SYNC_FRESH_MS = 2 * 60 * 1000;
 async function syncReadOnly(A, o){
   if (o.auto && !o.force && bibleMeta.length && SY.sha && !SY.dirty && Date.now() - SY.at < SYNC_FRESH_MS){ setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }   // đã kiểm tra trong 1 giờ qua → mở app nhanh, không tải lại vài MB (bấm “Kiểm tra cập nhật” thì bỏ qua giới hạn này)
-  let r = await A.read({ fresh:!!o.force }), hasLocal = bibleMeta.length > 0;
+  const blob = await freshMeta(), hasLocal = bibleMeta.length > 0;       // hỏi thẳng GitHub: tệp có bị sửa không?
+  if (blob && hasLocal && SY.blob === blob && !SY.dirty){ SY.at = Date.now(); saveSY(); setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }
+  let r = await A.read({ fresh:!!blob || !!o.force });
+  if (r && blob) r.blob = blob;
   if (r && !r.fresh && hasLocal && SY.sha && r.version !== SY.sha){      // thấy “khác” → hỏi lại GitHub cho chắc, tránh ghi đè bản mới bằng bản cũ còn kẹt trong bộ nhớ đệm
     try { const f = await A.read({ fresh:true, only:true }); if (f) r = f; } catch(e){}
   }
   if (!r){ setSync('ok', `Trên ${A.label} chưa có dữ liệu.`); return; }
-  if (r.version === SY.sha && hasLocal){ SY.at = Date.now(); saveSY(); setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }
+  if (r.version === SY.sha && hasLocal){ SY.at = Date.now(); if (r.blob) SY.blob = r.blob; saveSY(); setSync('ok', 'Nội dung đã là bản mới nhất.'); return; }
   if (!normBible((r.payload || {}).bible || r.payload || {}).length) throw new Error(`Dữ liệu trên ${A.label} chưa có nội dung Kinh Thánh.`);
   if (!SY.sha && hasLocal){                       // máy này có dữ liệu riêng chưa từng đồng bộ
     if (o.auto){ setSync('conflict', `Máy này đã có dữ liệu riêng khác với ${A.label}. Vào Quản lý dữ liệu → Đồng bộ ngay để chọn.`); toast(`Dữ liệu máy này khác ${A.label} – vào Quản lý dữ liệu → Đồng bộ ngay để chọn`); return; }
