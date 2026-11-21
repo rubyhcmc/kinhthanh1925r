@@ -1204,7 +1204,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21h';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21i';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3753,7 +3753,8 @@ function poemSplit(t){
   const ws = t.split(' '); let out = ws[0];
   for (let i = 1; i < ws.length; i++){
     const core = ws[i].replace(/\[\d+\]/g, '').replace(/^[^\p{L}]+|[^\p{L}\-]+$/gu, '');
-    const brk = core && core[0] !== core[0].toLowerCase() && core[0] === core[0].toUpperCase() && !POEM_KEEP.has(core) && POEM_OK.has(core[0].toLowerCase() + core.slice(1));
+    const pc = ws[i-1].replace(/\[\d+\]/g,''), chain = /^\p{Lu}[\p{L}\-]*$/u.test(pc);   // chữ trước cũng viết hoa và không có dấu câu (Đấng Toàn Năng, Đức Chúa Trời): cùng một danh xưng, không cắt
+    const brk = !chain && core && core[0] !== core[0].toLowerCase() && core[0] === core[0].toUpperCase() && !POEM_KEEP.has(core) && POEM_OK.has(core[0].toLowerCase() + core.slice(1));
     out += (brk ? '\n' : ' ') + ws[i];
   }
   return out;
