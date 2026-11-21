@@ -242,11 +242,14 @@ html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark]
 .pl.q3{--ind:calc(2 * var(--pl-step,1.6em))}
 .pl.q4{--ind:calc(3 * var(--pl-step,1.6em))}
 .pl.q5{--ind:calc(4 * var(--pl-step,1.6em))}
-/* Sách thơ trên điện thoại: lề hai bên co giãn, dòng 1.5 */
-.reader.poetry{padding-inline:clamp(14px,4vw,24px);line-height:1.5}
-.reader:has(.poem){padding-inline:clamp(14px,4vw,24px);line-height:1.5}
-body.pg .pgv>.reader.poetry{--pgm:max(clamp(14px,4vw,24px), calc((100vw - 680px) / 2));line-height:1.5}
-body.pg .pgv>.reader:has(.poem){--pgm:max(clamp(14px,4vw,24px), calc((100vw - 680px) / 2));line-height:1.5}
+/* Sách thơ trên điện thoại: lề hai bên co giãn; đọc lâu không mỏi mắt kiểu sách điện tử: dòng thoáng 1.65, nét chữ mảnh vừa (400, bản giấy trước đây 500 làm chữ nặng) */
+html[data-paper] .reader.poetry{font-weight:400}
+html[data-paper] .reader:has(.poem){font-weight:400}
+.reader.poetry .pl{letter-spacing:.003em}
+.reader.poetry{padding-inline:clamp(14px,4vw,24px);line-height:1.65}
+.reader:has(.poem){padding-inline:clamp(14px,4vw,24px);line-height:1.65}
+body.pg .pgv>.reader.poetry{--pgm:max(clamp(14px,4vw,24px), calc((100vw - 680px) / 2));line-height:1.65}
+body.pg .pgv>.reader:has(.poem){--pgm:max(clamp(14px,4vw,24px), calc((100vw - 680px) / 2));line-height:1.65}
 .vline{margin:0 0 .55em}
 .note{display:block;text-align:left;text-indent:0;font-style:italic;font-weight:400;font-size:.76em;line-height:1.5;color:var(--muted);margin:.3em 0 .45em}
 .fnm{font-family:var(--sans);font-style:normal;font-weight:700;font-size:.72em;letter-spacing:.01em;line-height:0;color:#c2410c;margin:0 .1em 0 .12em;font-variant-numeric:lining-nums;white-space:nowrap}
@@ -1216,7 +1219,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21n';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21o';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
