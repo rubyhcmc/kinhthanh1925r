@@ -220,8 +220,8 @@ html[data-paper] .v.flash .vn{background:#000;color:#f4f3ee;box-shadow:0 0 0 2px
 /* Số chương lớn: cao đúng 2 dòng chữ, đỉnh số ngang đỉnh dòng 1, chân số ngang chân dòng 2; số câu 1 được lược bỏ (số chương thay cho số câu 1) như Kinh Thánh in */
 .dc{float:left;font-size:3.5em;line-height:.78;font-weight:700;color:var(--accent);margin:.07em .11em 0 0;padding:0;font-variant-numeric:lining-nums;letter-spacing:-.01em;text-indent:0}
 .dc + .vn,.dc + .pl > .vn{display:none}
-.dc.dcp{margin-right:.58em}   /* chương có thơ ở 2 dòng đầu: chừa thêm 1.5em (thụt âm của dòng thơ) để chữ không đè lên số */
-.para:has(.dcp){text-indent:-1.5em}
+.dc.dcp{margin-right:.34em}   /* chương có thơ ở 2 dòng đầu: chừa thêm 1.5em (thụt âm của dòng thơ) để chữ không đè lên số */
+.para:has(.dcp){text-indent:-.8em}
 .vn{font-family:var(--serif);font-size:.6em;font-weight:700;vertical-align:super;line-height:0;margin:0 .2em 0 .14em;color:var(--accent);font-variant-numeric:lining-nums;letter-spacing:0;text-indent:0;white-space:nowrap}   /* số câu: chỉ số nhỏ đứng ngay trước chữ, cùng họ chữ với lời văn */
 .v{border-radius:4px;scroll-margin-top:14px}
 .v.sel{background:var(--hl)}
@@ -236,11 +236,17 @@ html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark]
 .poem .v{display:block}
 /* Thơ như Kinh Thánh in: số câu là chỉ số nhỏ đứng ngay trước chữ, dòng thơ bắt đầu thẳng lề; mức thụt q1 / q2 / q3 mỗi mức 1.5em;
    dòng dài tràn xuống thì thụt thêm một mức (treo). Các dòng nằm cạnh số chương lớn đều bắt đầu thẳng một mép bên phải số (như bản in), chỉ 2 dòng đầu bị số chương chiếm chỗ */
-.pl{display:block;--ind:0em;padding-left:calc(var(--ind) + 1.5em);text-indent:-1.5em;text-align:left}
-.pl.q2{--ind:1.5em}
-.pl.q3{--ind:3em}
-.pl.q4{--ind:4.5em}
-.pl.q5{--ind:6em}
+.poem{--pl-step:1.6em;--pl-hang:.8em}   /* bậc thụt giữa vế chính → vế đối (em, nở theo cỡ chữ); dòng tràn thụt thêm 'hang' để không lẫn với vế đối */
+.pl{display:block;--ind:0em;padding-left:calc(var(--ind) + var(--pl-hang,.8em));text-indent:calc(-1 * var(--pl-hang,.8em));text-align:left;text-wrap:pretty;-webkit-text-wrap:pretty;overflow-wrap:break-word}
+.pl.q2{--ind:var(--pl-step,1.6em)}
+.pl.q3{--ind:calc(2 * var(--pl-step,1.6em))}
+.pl.q4{--ind:calc(3 * var(--pl-step,1.6em))}
+.pl.q5{--ind:calc(4 * var(--pl-step,1.6em))}
+/* Sách thơ trên điện thoại: lề hai bên co giãn, dòng 1.5 */
+.reader.poetry{padding-inline:clamp(14px,4vw,24px);line-height:1.5}
+.reader:has(.poem){padding-inline:clamp(14px,4vw,24px);line-height:1.5}
+body.pg .pgv>.reader.poetry{--pgm:max(clamp(14px,4vw,24px), calc((100vw - 680px) / 2));line-height:1.5}
+body.pg .pgv>.reader:has(.poem){--pgm:max(clamp(14px,4vw,24px), calc((100vw - 680px) / 2));line-height:1.5}
 .vline{margin:0 0 .55em}
 .note{display:block;text-align:left;text-indent:0;font-style:italic;font-weight:400;font-size:.76em;line-height:1.5;color:var(--muted);margin:.3em 0 .45em}
 .fnm{font-family:var(--sans);font-style:normal;font-weight:700;font-size:.72em;letter-spacing:.01em;line-height:0;color:#c2410c;margin:0 .1em 0 .12em;font-variant-numeric:lining-nums;white-space:nowrap}
@@ -1210,7 +1216,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21m';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21n';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -3762,6 +3768,16 @@ function titleOf(book){   // tên hiển thị ở đầu chương (để trốn
    Câu đã có xuống dòng trong dữ liệu thì giữ nguyên. Chỉ ảnh hưởng cách hiển thị, không đổi dữ liệu. */
 const POEM_OK = new Set('ai an anh ao ba ban bang bao bay binh biến biếng biết biển biểu biệt buôn buông buồn buổi buộc bà bài bàn bày bá bác bán báng bánh báo báp-têm bát báu bây bão bèn bên bì bình bích bò bó bóc bói bóng bôi bông bùn bú băng bước bạc bạch bại bạn bạo bảng bảo bảy bất bấy bầu bầy bẫy bắc bắn bắt bằm bằng bẻ bề bền bể bệ bỉ bị bịnh bọc bọn bỏ bố bối bốn bồ bổ bổn bộ bội bột bớ bớt bờ bởi bụa bụi bụng bức bửu bữa bực ca cai can canh cao cay cha chay che chi chia chim chiêm chiên chiếc chiếm chiến chiếu chiều cho chung chuyên chuyện chuồng chuộc chà chàng chào chán chánh cháu cháy châm chân châu chén chép chê chê-ru-bim chí chín chính chó chói chót chôn chú chúa chúc chúng chút chăm chăn chăng chơi chưa chưng chước chạm chạy chảy chất chầu chậm chậu chắc chắn chắt chẳng chặt chế chết chỉ chị chịu chọc chọn chối chốn chống chồng chỗ chớ chớp chờ chở chợ chục chủ chứa chức chứng chừa chừng chữ chữa chực coi con cu-đê cung cuối cuốn cuồng cuộc càng cào cày cá các cách cái cám cánh cáo cát câm cân câu cây cãi còn có côi côn công cõi cù cùng cúi cúng cũ cũng cơ cơn cư cưới cướp cười cường cạn cạnh cạo cả cải cảm cấm cấp cất cấu cầm cần cầu cẩn cận cật cậu cậy cắn cắp cắt cặp cỏ cỏi cố cối cốt cổ cộ cộng cột cớ cờ cởi cỡ cỡi của củi cứ cứng cứu cừu cửa cự cực da dang danh dao diệt do dung duyên dài dàn dành dám dáy dâm dân dâng dâu dây dê dính dò dòng dõi dõng dùng dơ dư dương dưới dường dạ dại dạn dạng dạy dấu dấy dầu dẫn dẫu dẫy dật dậy dắt dặn dể dễ dịch dịp dọc dọn dốc dối dỗ dột dời dỡ dụ dục dụng dủ dứt dừng dữ dự dựng e em gai gan ganh ghen ghi ghiếc ghét ghê gia giam gian giao gieo già giàu giày giá giáng giáo giáp giã giêng gió giúp giăng giơ giương giường giả giải giảng giấc giấu giận giặc giặt giếng giết giềng giỏ giỏi giống giới giờ giục giữ giữa giựt gà gài gái gánh gây gã gãy gì gìn gò góa góc góp gươm gương gạt gả gấp gầm gần gẫm gậy gặp gặt gọi gốc gối gốm gỗ gớm gở gởi gỡ hai ham hang hao hay heo hi hiên hiếp hiền hiển hiểu hiện hiệp hiệu hoa hoang hoàn hoàng hoại hoạn hoảng hoặc hung huyết huệ hà hài hàng hành há hái hát hãi hãm hãy hèn héo hình hòa hòm hòn hóa hôm hôn hông hùng hơi hơn hư hương hướng hưởng hạ hại hạn hạnh hạt hầm hầu hậu hắn hằng hẳn hết hề hễ hỉ họ họa học họp hỏi hố hối hồ hồi hồn hồng hổ hộ hội hột hớn hớt hở hỡi hủy hứa hừng hữu khe khen khi khinh khiêm khiên khiêng khiến khiếp kho khoe khoái khoảng khuyên khuất khuấy khá khác khách khám khát khéo khí khó khóc khói khô khôn không khăn khấn khẩn khắc khắp khỏi khốn khổ khởi khủng khứng kia kinh kiên kiêng kiêu kiếm kiến kiều kiểu kiện kèn kém kéo kê kêu kìa kín kính ký kẻ kẻo kế kết kề kể kịp kỳ kỵ kỷ kỹ la lam lan lang lao lay linh liêng liền liệng liệu lo loa loài loại loạn lui luyện luôn luận luật luống luồng là làm làng lành lá láng lánh lân lâu lãnh lão lên lìa lình lính lò lòng lóc lót lông lùng lúa lúc lý lăm lăn lũy lư lưng lưu lương lưới lường lưỡi lượm lạ lạc lại lạy lấp lấy lầm lần lẫn lẫy lập lật lắm lắng lằm lặn lặng lẽ lễ lệ lịnh lọc lối lỗ lỗi lộ lộn lột lớn lời lợi lục lụt lừa lửa lựa lực lựu ma mai mang mau may men miếng miền miệng mong mua muôn muối muốn muội mà màn màng màu mái máu mây mãi mãn mão mé mê mì mình mòn móc món môi môn mù mùa mùi múa mũi mưa mưu mươi mướn mười mượn mạc mạch mạng mạnh mả mất mấy mầu mầy mập mật mắc mắn mắt mặc mặt mẹ mẽ mến mệt mịn mịt mọc mọi mọn mỏi mối mốt mồ mồi mồng mỗi mộ mộc một mới mờ mời mở mỡ mục mừng mực nam nay ngai ngang ngay nghe nghi nghiêm nghiêng nghiền nghiệm nghiệp nghèo nghĩ nghĩa nghề nghỉ nghị nghịch ngoan ngon ngoài ngoại ngu nguy nguyên nguyền nguyện nguồn ngàn ngày ngã ngó ngón ngôi ngôn ngăn ngũ ngươi ngước người ngược ngạch ngạo ngọc ngọn ngọt ngồi ngờ ngợi ngụ ngục ngủ ngừng ngữ ngự ngựa ngực nhau nhiêu nhiều nhiệm nho nhoáng nhuốc nhà nhành nhác nhánh nhân nhì nhìn nhóm nhũ nhơ như nhưng nhường nhạc nhạo nhảy nhậm nhận nhập nhắc nhằm nhẹ nhịn nhọc nhỏ nhồi nhổ nhớ nhờ nhục nhứt những niệm no noi non nuôi nuốt nài nàn nàng nào nát náu nâng não ném nê nên nín nó nói nóng nô núi núp năm năn năng nơi nương nước nạn nấu nấy nầy nắm nắp nằm nặng nẻo nếu nề nền nọ nọc nồi nổi nỗi nộ nội nộp nở nợ nứt nửa nữ nữa oai ong pha phe phi phiên phiền phong phu phung phàm phá phái phán pháp phát phân phép phía phòng phó phù phú phương phước phượng phạm phạt phải phản phần phẩm phận phỉnh phố phổ phụ phục phủ phừng qua quan quang quanh quay quen quyến quyết quyền quyển quá quán quân què quê quên quý quăng quả quản quần quốc quở quỳ quỷ ra rao reo riêng roi run ruộng ruột ràng rày rách râu rình ròng rõ rúng rút răn răng rơi rơm rước rưới rượu rạng rải rảy rất rầu rẩy rắn rằng rẽ rể rễ rối rốt rồi rỗi rộng rớt rờ rỡ rủa rừng rửa rực sa sa-bát sai sang sanh sao sau say si-tim sinh siếc-lơ soi son song soát soạn suy suối sàng sách sáng sánh sát sáu sân sâu sét sóc sóng sót sông súc săn sĩ sư sương sướng sạch sả sản sấm sấp sầu sắc sắm sắng sắp sắt sẵn sặm sẻ sẽ sỉ số sống sốt sổ sớm sở sợ sợi sứ sức sừng sử sửa sữa sự ta ta-lâng tai tan tang tay tha thai tham than thanh thay theo thi thinh thiên thiêng thiêu thiết thiếu thiện thoát thuyền thuận thuật thuế thuốc thuộc thuở thà thành thác thách thái thám tháng thánh tháp thân thâu thây thêm thêu thì thình thí thích thói thôi thôn thông thù thùng thú thăm thơ thơm thưa thương thước thường thưởng thượng thạnh thả thảm thảy thấp thấu thấy thầm thần thầy thận thập thật thắng thắp thắt thẳng thẹn thế thề thể thị thịt thọ thỏa thốn thổ thổi thờ thời thở thợ thủ thứ thức thử thực tin tinh tiên tiêu tiếc tiếng tiếp tiền tiệc tiện toan toàn tra trai trang tranh trao treo tri trinh triều tro trong trung truyền truân truất truồng tràn trá trách trái trán tránh trên trình trí trói trông trùng trú trúng trăm trăng trũng trưa trước trưởng trại trạng trả trải trấn trần trận trắng trẻ trễ trị trọn trọng trốn trống trồng trổ trổi trỗi trộm trời trở trợ trụ trừ trực tu tuyết tuyệt tuần tuổi tà tài tàn tàng tàu tác tám tánh tâm tâu tây té tên tì tìm tình tích tím tín tính tòa tóc tôi tôn tông tù tùng tùy tăm tơ tư tươi tưới tướng tường tưởng tượng tạ tại tạm tạo tả tản tấm tất tận tập tật tắm tắt tế tỉnh tịnh tỏ tối tốt tổ tổng tộc tội tớ tới tợn tục tụng tứ tức từ từng tử tự uế uống vai van vang vi vinh viên viếng viết việc vu vua vui và vài vàng vào vác vách ván vâng vây vì ví vít vòng vô vương vườn vượng vượt vạ vạn vả vải vấn vấp vầng vầy vẫn vật vậy vắng vẹn vẻ về vệ vị vọng vốn vội với vỡ vợ vụ vừa vững vực xa xanh xe xem xin xinh xiêu xiềng xong xui xung xuống xác xây xé xét xích xóa xót xô xông xưa xưng xương xướng xảy xấu xỏ xống xứ xức xứng xử y yên yêu yến yếu ào ác ách ái ám án ánh áo áp âm ân ép ê-pha ê-phót êm ích ít ô ô-li-ve ôi ôn ông út ý ăn đai đang đau đem đen đeo đi đinh điên điềm điều điểm điển điện điệu đo đoàn đoái đoán đoạn đoạt đui đuối đuổi đà đài đàn đàng đào đày đá đám đáng đánh đáp đâm đâu đây đã đãi đèn đêm đòi đòn đó đói đón đóng đôi đông đúc đưa đương đường được đượm đại đạo đạp đảng đảo đấng đất đấu đầu đầy đập đật đậu đắng đắp đằng đặng đặt đẹp đẻ đẽ đếm đến đề đền đều để đỉnh địa địch định đọc đỏ đốc đối đốm đốn đống đốt đồ đồi đồn đồng đổ đổi đỗi độ độc đội động đớn đời đỡ đợi đục đụng đủ đứa đức đứng đừng đực đựng ơi ơn ư ưa ưng ước ấn ấu ấy ẩn ắt ốm ổ ổn ở ủi ức ứng'.split(' '));
 const POEM_KEEP = new Set(['Chúa','Ngài','Đức','Đấng','Con','Cha','Thánh','Trời','Giê-hô-va','Vua','Hỡi','Chúng','Y-sơ-ra-ên']);
+/* Nối 2 chữ cuối mỗi vế thơ bằng khoảng trắng không ngắt (\u00A0): vế tràn xuống không bao giờ chỉ còn 1 chữ lẻ. Chỉ đổi lúc hiển thị, dữ liệu không đổi. */
+const nbJoin = s => String(s).replace(/([^\s\[\]]+) ([^\s\[\]]+)$/u, '$1\u00A0$2');
+/* Cập nhật bố cục thơ cho khung đọc (lề, dòng) — gọi TRƯỚC khi chia trang để số trang đo đúng */
+function poemLayout(art){
+  art = art || document.getElementById('bibleText'); if (!art) return false;
+  const on = !!art.querySelector('.poem');
+  art.classList.toggle('poetry', on);
+  void art.offsetHeight;                                           // ép tính lại bố cục ngay
+  return on;
+}
 function poemSplit(t){
   if (!t || t.includes('\n')) return t;
   const ws = t.split(' '); let out = ws[0], seg = 1;     // seg = số chữ của dòng thơ đang viết
@@ -3824,7 +3840,7 @@ function paperHTML(book, ch, verses, view, idp){
     if (!cur || cur !== want || v.p){ close(); cur = want; out += want === 'p' ? '<p class="para">' : '<div class="poem">'; }
     if (isPoem){
       out += `<span ${attrs}>${dc}` + vt.split('\n').map((ln, k) =>
-        `<span class="pl q${Math.max(+v.q[k] || 1, k ? 2 : 1)}">${k === 0 ? num : ''}${richText(ln, vm)}</span>`).join('') + '</span>';   // số chương lớn đứng NGOÀI các dòng thơ để nằm đúng lề trái
+        `<span class="pl q${Math.max(+v.q[k] || 1, k ? 2 : 1)}">${k === 0 ? num : ''}${richText(nbJoin(ln), vm)}</span>`).join('') + '</span>';   // số chương lớn đứng NGOÀI các dòng thơ để nằm đúng lề trái
     } else out += `<span ${attrs}>${dc}${num}${richText(v.t, vm)}</span> `;
     /* Ghi chú KHÔNG số (vd "(Phó cho quản phường nhạc…)"): xuống dòng ngay sau câu đó, in nghiêng, cỡ chữ thường — không đẩy xuống cuối chương */
     const un = (v.fn || []).filter(f => !isNumFn(f));
@@ -4841,6 +4857,7 @@ function pgNmWrap(art){
 }
 function pgBrk(art, W, lh){ pgNmWrap(art); return pgBrk0(art, W, lh); }
 function pgFitArt(art){
+  poemLayout(art);
   const view = art.parentElement; if (!view) return;
   const H = view.clientHeight, W = view.clientWidth; if (!H || !W) return;
   const st = art.style; st.lineHeight = st.height = st.paddingTop = st.paddingBottom = '';
@@ -4926,6 +4943,7 @@ function pgRefresh(keepVerse){                                     // dựng l�
   fnPopClose();
   if (!pgOn()){ pgResetArt(art); pgPrepClear(true); return; }
   pgPrepClear(true);
+  poemLayout(art);
   const W = pgW(), widthSame = pg.lastW === W; pg.lastW = W;
   pgCount();
   if (pg.toEnd){ pg.toEnd = false; return pgGo(pg.pages - 1); }
@@ -4941,6 +4959,7 @@ function pgRefresh(keepVerse){                                     // dựng l�
     pg.key = key; if (!same && !pg.toEnd) pg.page = 0;
     pgPrepClear(true);
     _rcPg.apply(this, arguments);
+    poemLayout();
     if (!pgOn()){ pg.toEnd = false; pgResetArt(); return; }
     pg.useFit = true; try { pgRefresh(keep); } finally { pg.useFit = false; }
     if (document.fonts && document.fonts.status === 'loading') document.fonts.ready.then(() => pgRefresh(keep));
