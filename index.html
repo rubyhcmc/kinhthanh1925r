@@ -235,6 +235,8 @@ html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark]
 /* Số chương lớn trong đoạn thơ: nằm sát lề trái; mép phải của nó chừa thêm 1.3em (= .3714em của chữ lớn 3.5em) để bù thụt âm của các dòng thơ bên cạnh,
    nhờ vậy mọi dòng bắt đầu cách số chương một khoảng đều nhau và không đè lên nó */
 .poem .dc{margin:.07em .72em 0 0}
+.pl.q2{padding-left:2.5em}   /* câu thơ lùi vào một bậc (q=2) như sách in: dòng thứ hai của cặp câu song song thụt vào, dòng tràn xuống vẫn thụt thêm 1.3em */
+.pl.q3{padding-left:3.7em}
 .vline{margin:0 0 .55em}
 .note{display:block;text-align:left;text-indent:0;font-style:italic;font-weight:400;font-size:.76em;line-height:1.5;color:var(--muted);margin:.3em 0 .45em}
 .fnm{font-family:var(--sans);font-style:normal;font-weight:700;font-size:.72em;letter-spacing:.01em;line-height:0;color:#c2410c;margin:0 .1em 0 .12em;font-variant-numeric:lining-nums;white-space:nowrap}
@@ -3754,7 +3756,10 @@ function poemSplit(t){
   for (let i = 1; i < ws.length; i++){
     const core = ws[i].replace(/\[\d+\]/g, '').replace(/^[^\p{L}]+|[^\p{L}\-]+$/gu, '');
     const pc = ws[i-1].replace(/\[\d+\]/g,''), chain = /^\p{Lu}[\p{L}\-]*$/u.test(pc);   // chữ trước cũng viết hoa và không có dấu câu (Đấng Toàn Năng, Đức Chúa Trời): cùng một danh xưng, không cắt
-    const brk = !chain && core && core[0] !== core[0].toLowerCase() && core[0] === core[0].toUpperCase() && !POEM_KEEP.has(core) && POEM_OK.has(core[0].toLowerCase() + core.slice(1));
+    const lineW = out.length - (out.lastIndexOf('\n') + 1) ? out.slice(out.lastIndexOf('\n') + 1).trim().split(/\s+/).length : 0;   // số chữ của dòng đang dựng: dòng quá ngắn (vd "Ôi!") thì giữ liền với dòng sau
+    const capital = core && core[0] !== core[0].toLowerCase() && core[0] === core[0].toUpperCase();
+    const endsSent = /[.!?;:]["”’)\]]*$/.test(pc.trim()) && lineW >= 3;   // hết câu (. ! ? ;) và dòng đã đủ dài: chữ hoa kế tiếp, kể cả Con/Chúa/Ngài…, mở dòng thơ mới
+    const brk = lineW >= 3 && !(chain && !endsSent) && capital && (endsSent || (!POEM_KEEP.has(core) && POEM_OK.has(core[0].toLowerCase() + core.slice(1))));
     out += (brk ? '\n' : ' ') + ws[i];
   }
   return out;
