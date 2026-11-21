@@ -231,10 +231,12 @@ html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark]
 .pl{display:block;padding-left:1.3em;text-indent:-1.3em}
 /* Thơ như sách in: số câu treo ngoài lề trái, MỌI dòng thơ bắt đầu thẳng một mép, chỉ dòng dài tràn xuống mới thụt vào một mức */
 .poem{padding-left:1.3em}
-.poem .pl .vn{display:inline-block;width:0;direction:rtl;white-space:nowrap;margin:0;transform:translateX(-.95em)}
+.poem .pl .vn{display:inline-block;width:0;direction:rtl;white-space:nowrap;margin:0;transform:translateX(-1.2em)}   /* số câu treo hẳn ra lề, chừa khe rõ với chữ (trước đây số 2 chữ số dính vào chữ) */
 /* Số chương lớn trong đoạn thơ: nằm sát lề trái; mép phải của nó chừa thêm 1.3em (= .3714em của chữ lớn 3.5em) để bù thụt âm của các dòng thơ bên cạnh,
    nhờ vậy mọi dòng bắt đầu cách số chương một khoảng đều nhau và không đè lên nó */
-.poem .dc{margin:.07em .72em 0 0}
+.poem .dc{font-size:3em;line-height:1.06;margin:.02em .85em 0 0}   /* số chương cao đúng hai dòng thơ: bậc thang chỉ một nấc gọn, không lệch lung tung */
+.poem{line-height:1.55}   /* dòng thơ sít nhau như sách in; khoảng thở nằm giữa các khổ thơ */
+.poem .pl{hyphens:none;-webkit-hyphens:none;text-align:left}
 .pl.q2{padding-left:2.5em}   /* câu thơ lùi vào một bậc (q=2) như sách in: dòng thứ hai của cặp câu song song thụt vào, dòng tràn xuống vẫn thụt thêm 1.3em */
 .pl.q3{padding-left:3.7em}
 .vline{margin:0 0 .55em}
