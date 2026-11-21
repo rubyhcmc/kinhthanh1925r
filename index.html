@@ -230,10 +230,11 @@ html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark]
 .poem .v{display:block}
 .pl{display:block;padding-left:1.3em;text-indent:-1.3em}
 /* Thơ thụt dòng như văn xuôi: dòng 2 trở đi của một câu thụt vào đúng bằng dòng tràn xuống, chỉ dòng đầu (có số câu) nằm sát lề */
-.poem .v:not(:has(.q2)) .pl ~ .pl{text-indent:0}
+.poem .pl ~ .pl{text-indent:0}   /* mọi câu thơ: dòng đầu sát lề, các dòng sau thụt đều một mức (bỏ mức thụt sâu q2 gây so le) */
 /* Số chương lớn trong đoạn thơ: nằm sát lề trái; mép phải của nó chừa thêm 1.3em (= .3714em của chữ lớn 3.5em) để bù thụt âm của các dòng thơ bên cạnh,
    nhờ vậy mọi dòng bắt đầu cách số chương một khoảng đều nhau và không đè lên nó */
 .poem .dc{margin:.07em .4914em 0 0}
+.poem .v:has(.dc) .pl{padding-left:0;text-indent:0}   /* câu có chữ cái lớn: để chữ lớn tự đẩy các dòng, khỏi thụt thêm */
 .vline{margin:0 0 .55em}
 .note{display:block;text-align:left;text-indent:0;font-style:italic;font-weight:400;font-size:.76em;line-height:1.5;color:var(--muted);margin:.3em 0 .45em}
 .fnm{font-family:var(--sans);font-style:normal;font-weight:700;font-size:.72em;letter-spacing:.01em;line-height:0;color:#c2410c;margin:0 .1em 0 .12em;font-variant-numeric:lining-nums;white-space:nowrap}
@@ -1203,7 +1204,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21g';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21h';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
