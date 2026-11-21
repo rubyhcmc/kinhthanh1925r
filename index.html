@@ -1217,7 +1217,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21p';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21q';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -1635,7 +1635,11 @@ $('#selVerse').onchange = e => { const n = +e.target.value; if (n) ktJumpVerse(n
 /* Ô Chương / Câu: nhập số trực tiếp (bàn phím số), đủ số hợp lệ là nhảy ngay */
 /* Số mờ "/36" nằm đè bên phải ô: chỉ giữ chỗ cho nó khi ô còn đủ rộng để hiện ĐỦ chữ số đang hiển thị (ví dụ chương 20, 119);
    nếu không đủ thì ẩn số mờ (class tight) để chữ số chính không bị cắt thành "2…". */
-function fitRg(e, inp, sample){
+function fitRg(e, inp, sample){        // đo ở khung hình kế tiếp (trước khi vẽ): tránh ép tính bố cục cả chương ngay lúc đang dựng → lật chương nhẹ hơn
+  if (inp._fr) cancelAnimationFrame(inp._fr);
+  inp._fr = requestAnimationFrame(() => { inp._fr = 0; fitRgNow(e, inp, sample); });
+}
+function fitRgNow(e, inp, sample){
   const t = e.textContent, nf = inp.closest('.nf');
   if (nf) nf.classList.remove('tight');
   inp.style.paddingRight = '';
@@ -1645,7 +1649,7 @@ function fitRg(e, inp, sample){
   try {
     const cs = getComputedStyle(inp), W = inp.clientWidth;
     if (W > 0){
-      const cx = fitRg.cx || (fitRg.cx = document.createElement('canvas').getContext('2d'));
+      const cx = fitRgNow.cx || (fitRgNow.cx = document.createElement('canvas').getContext('2d'));
       cx.font = [cs.fontStyle, cs.fontWeight, cs.fontSize, cs.fontFamily].join(' ');
       const need = cx.measureText(sample || '0').width, avail = W - (parseFloat(cs.paddingLeft) || 0) - tw;
       fit = need + 2 <= avail;
@@ -4710,7 +4714,12 @@ function updateOnline(){ $('#offlineBadge').hidden = navigator.onLine; }
 addEventListener('online', updateOnline); addEventListener('offline', updateOnline);
 
 /* Về đầu chương khi đổi sách/chương: chỉ đặt lại vị trí của khung đọc; thanh đầu trang cố định nên không có gì nhảy */
-function ktTop(){ if (SCR.scrollTop !== 0) SCR.scrollTop = 0; const cn = document.getElementById('chapNav'); if (cn) cn.style.height = ''; }
+function ktTop(){
+  const up = () => { if (SCR.scrollTop !== 0) SCR.scrollTop = 0; };
+  if (typeof pgOn === 'function' && pgOn()) requestAnimationFrame(up);    // trang giấy: khung cuộn không dùng; đọc scrollTop ngay sẽ ép tính bố cục cả chương mới, nên để sang khung hình kế
+  else up();
+  const cn = document.getElementById('chapNav'); if (cn) cn.style.height = '';
+}
 
 /* Báo cáo tình trạng bộ nhớ của máy: mỗi nơi lưu (IndexedDB, Cache Storage, localStorage) đang giữ gì – để biết chính xác nơi nào hỏng */
 async function ktDiag(){
