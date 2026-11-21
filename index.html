@@ -214,9 +214,13 @@ html[data-paper] .v.flash .vn{background:#000;color:#f4f3ee;box-shadow:0 0 0 2px
 .hd .secn{margin-top:.5em}
 .sec2{font-size:.9em;font-weight:400;font-style:normal;color:var(--fg);line-height:1.4;margin-top:.35em}   /* dòng dưới tiêu đề (dòng # thứ 2 trở đi): chữ thường, nhỏ hơn mục lớn — giống sách in (Thi-thiên: tiêu đề đậm, dòng mô tả bên dưới không đậm) */
 .ref1{font-style:italic;font-size:.8em;color:var(--muted)}
-.para{margin:0 0 .75em}
-.dc{float:left;font-size:3.5em;line-height:.8;font-weight:700;color:var(--accent);margin:.07em .12em 0 0}
-.vn{font-family:var(--sans);font-size:.58em;font-weight:700;vertical-align:super;line-height:0;margin:0 .22em 0 .12em;color:var(--accent)}
+.para{margin:0 0 .2em;text-indent:1.4em;-webkit-text-wrap:pretty;text-wrap:pretty}   /* Kinh Thánh in: đoạn văn xuôi thụt đầu dòng, các đoạn sát nhau (không cách dòng rộng như trang web) */
+.hd + .para,.chhead + .para,.para:has(.dc){text-indent:0}
+.para:has(.dc){margin-bottom:.05em}   /* đoạn có số chương lớn: sát dòng kế để số chương cao đúng 2 dòng */   /* đoạn đầu chương / ngay sau tiêu đề mục: không thụt */
+/* Số chương lớn: cao đúng 2 dòng chữ, đỉnh số ngang đỉnh dòng 1, chân số ngang chân dòng 2; số câu 1 được lược bỏ (số chương thay cho số câu 1) như Kinh Thánh in */
+.dc{float:left;font-size:3.5em;line-height:.78;font-weight:700;color:var(--accent);margin:.07em .11em 0 0;padding:0;font-variant-numeric:lining-nums;letter-spacing:-.01em;text-indent:0}
+.dc + .vn,.dc + .pl > .vn{display:none}
+.vn{font-family:var(--serif);font-size:.6em;font-weight:700;vertical-align:super;line-height:0;margin:0 .2em 0 .14em;color:var(--accent);font-variant-numeric:lining-nums;letter-spacing:0;text-indent:0;white-space:nowrap}   /* số câu: chỉ số nhỏ đứng ngay trước chữ, cùng họ chữ với lời văn */
 .v{border-radius:4px;scroll-margin-top:14px}
 .v.sel{background:var(--hl)}
 /* Trang giấy: bôi chọn câu dùng đúng màu vàng nhạt như trang chính (trước đây là mảng xám đặc, xấu và dính liền nhau giữa các câu thơ) */
@@ -226,15 +230,15 @@ html[data-paper] .v.holding.hb{box-shadow:0 0 0 4px #fff1c2!important}
 html[data-paper][data-theme=dark] .v.holding.hb{box-shadow:0 0 0 4px #4a3d1a!important}
 html[data-paper] .poem .v.sel,html[data-paper] .poem .v.bm.sel{background:linear-gradient(#fff1c2,#fff1c2) center/100% calc(100% - 2px) no-repeat}   /* chừa 1px giữa hai câu thơ liền nhau để thấy rõ từng câu, không dính thành một khối */
 html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark] .poem .v.bm.sel{background:linear-gradient(#4a3d1a,#4a3d1a) center/100% calc(100% - 2px) no-repeat}
-.poem{margin:0 0 .9em;text-align:left}
+.poem{margin:0 0 .55em;text-align:left;padding-left:0;text-indent:0}
 .poem .v{display:block}
-.pl{display:block;padding-left:1.3em;text-indent:-1.3em}
-/* Thơ như sách in: số câu treo ngoài lề trái, MỌI dòng thơ bắt đầu thẳng một mép, chỉ dòng dài tràn xuống mới thụt vào một mức */
-.poem{padding-left:1.3em}
-.poem .pl .vn{display:inline-block;width:0;direction:rtl;white-space:nowrap;margin:0;transform:translateX(-.95em)}
-/* Số chương lớn trong đoạn thơ: nằm sát lề trái; mép phải của nó chừa thêm 1.3em (= .3714em của chữ lớn 3.5em) để bù thụt âm của các dòng thơ bên cạnh,
-   nhờ vậy mọi dòng bắt đầu cách số chương một khoảng đều nhau và không đè lên nó */
-.poem .dc{margin:.07em .72em 0 0}
+/* Thơ như Kinh Thánh in: số câu là chỉ số nhỏ đứng ngay trước chữ, dòng thơ bắt đầu thẳng lề; mức thụt q1 / q2 / q3 mỗi mức 1.5em;
+   dòng dài tràn xuống thì thụt thêm một mức (treo). display:flow-root để các dòng thơ cạnh số chương lớn tự co lại nằm gọn bên phải số, không đè lên số */
+.pl{display:flow-root;--ind:0em;padding-left:calc(var(--ind) + 1.5em);text-indent:-1.5em;text-align:left}
+.pl.q2{--ind:1.5em}
+.pl.q3{--ind:3em}
+.pl.q4{--ind:4.5em}
+.pl.q5{--ind:6em}
 .vline{margin:0 0 .55em}
 .note{display:block;text-align:left;text-indent:0;font-style:italic;font-weight:400;font-size:.76em;line-height:1.5;color:var(--muted);margin:.3em 0 .45em}
 .fnm{font-family:var(--sans);font-style:normal;font-weight:700;font-size:.72em;letter-spacing:.01em;line-height:0;color:#c2410c;margin:0 .1em 0 .12em;font-variant-numeric:lining-nums;white-space:nowrap}
@@ -3750,12 +3754,13 @@ const POEM_OK = new Set('ai an anh ao ba ban bang bao bay binh biến biếng bi
 const POEM_KEEP = new Set(['Chúa','Ngài','Đức','Đấng','Con','Cha','Thánh','Trời','Giê-hô-va','Vua','Hỡi','Chúng','Y-sơ-ra-ên']);
 function poemSplit(t){
   if (!t || t.includes('\n')) return t;
-  const ws = t.split(' '); let out = ws[0];
+  const ws = t.split(' '); let out = ws[0], seg = 1;     // seg = số chữ của dòng thơ đang viết
   for (let i = 1; i < ws.length; i++){
     const core = ws[i].replace(/\[\d+\]/g, '').replace(/^[^\p{L}]+|[^\p{L}\-]+$/gu, '');
     const pc = ws[i-1].replace(/\[\d+\]/g,''), chain = /^\p{Lu}[\p{L}\-]*$/u.test(pc);   // chữ trước cũng viết hoa và không có dấu câu (Đấng Toàn Năng, Đức Chúa Trời): cùng một danh xưng, không cắt
-    const brk = !chain && core && core[0] !== core[0].toLowerCase() && core[0] === core[0].toUpperCase() && !POEM_KEEP.has(core) && POEM_OK.has(core[0].toLowerCase() + core.slice(1));
-    out += (brk ? '\n' : ' ') + ws[i];
+    const short = seg <= 2 && /[!?]$/.test(pc);   // lời cảm thán ngắn đầu dòng (\"Ôi!\", \"Than ôi!\") đi liền với phần sau trên cùng một dòng, như bản in
+    const brk = !short && !chain && core && core[0] !== core[0].toLowerCase() && core[0] === core[0].toUpperCase() && !POEM_KEEP.has(core) && POEM_OK.has(core[0].toLowerCase() + core.slice(1));
+    out += (brk ? '\n' : ' ') + ws[i]; seg = brk ? 1 : seg + 1;
   }
   return out;
 }
