@@ -1203,7 +1203,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21d';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21f';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -5342,18 +5342,7 @@ function drawVerseCard(X, W, H, o){
         const ccx = CL + CW / 2, ccy = CT + CH / 2, eg = x.createRadialGradient(ccx, ccy, Math.min(CW, CH) * .30, ccx, ccy, Math.hypot(CW, CH) * .56);
         eg.addColorStop(0, 'rgba(110,62,12,0)'); eg.addColorStop(1, `rgba(110,62,12,${(.42 * age).toFixed(3)})`); x.fillStyle = eg; x.fillRect(CL, CT, CW, CH);
         }
-        for (let i = 0, n = Math.round(CW * CH / 7000 * age); i < n; i++){                      // sợi giấy
-          const fx = CL + rnd() * CW, fy = CT + rnd() * CH, a = rnd() * Math.PI, l = (8 + rnd() * 26) * k;
-          x.strokeStyle = `rgba(120,80,30,${(.05 + rnd() * .08).toFixed(3)})`; x.lineWidth = Math.max(.8, k); x.beginPath(); x.moveTo(fx, fy); x.lineTo(fx + Math.cos(a) * l, fy + Math.sin(a) * l); x.stroke();
-        }
-        for (let i = 0, n = Math.round(10 + 22 * age); i < n; i++){                              // đốm ố nhỏ
-          const fx = CL + rnd() * CW, fy = CT + rnd() * CH, r = (1.2 + rnd() * 4.5) * k;
-          x.fillStyle = `rgba(110,65,20,${(.06 + rnd() * .12).toFixed(3)})`; x.beginPath(); x.arc(fx, fy, r, 0, Math.PI * 2); x.fill();
-        }
-        for (let i = 0, n = Math.round(2 + 4 * age); i < n; i++){                                // vết ố loang mờ
-          const fx = CL + rnd() * CW, fy = CT + rnd() * CH, r = (50 + rnd() * 110) * k, bg2 = x.createRadialGradient(fx, fy, 0, fx, fy, r);
-          bg2.addColorStop(0, `rgba(130,80,25,${(.07 * age).toFixed(3)})`); bg2.addColorStop(1, 'rgba(130,80,25,0)'); x.fillStyle = bg2; x.fillRect(fx - r, fy - r, 2 * r, 2 * r);
-        }
+        /* giấy vàng SẠCH: chỉ ngả vàng đều + tối nhẹ dần ra mép, không sợi/đốm/vết ố để ảnh không bị bẩn */
       }
     x.restore();
   };
@@ -5388,13 +5377,11 @@ function drawVerseCard(X, W, H, o){
     x.restore();
   };
   const drawFrame = x => {
-    if (o.frame === 2){                                                   // khung cổ điển: viền đôi (đậm + mảnh) + hình thoi ở bốn góc, như trang sách in xưa
+    if (o.frame === 2){                                                   // khung cổ điển: chỉ viền đôi (đậm + mảnh), gọn, không hoa văn
       const ac = o.color || T.acc; x.save(); x.strokeStyle = ac; x.fillStyle = ac;
       const a = 30 * k, b2 = 46 * k, rd = Math.max(6, R - 22 * k);
       x.globalAlpha = .85; x.lineWidth = Math.max(2.4, 3 * k); rrect(x, CL + a, CT + a, CW - 2 * a, CH - 2 * a, rd); x.stroke();
       x.globalAlpha = .6; x.lineWidth = Math.max(1.2, 1.4 * k); rrect(x, CL + b2, CT + b2, CW - 2 * b2, CH - 2 * b2, Math.max(4, rd - 12 * k)); x.stroke();
-      x.globalAlpha = .9; const d = 9 * k;
-      [[CL + b2, CT + b2], [CL + CW - b2, CT + b2], [CL + b2, CT + CH - b2], [CL + CW - b2, CT + CH - b2], [CL + CW / 2, CT + a], [CL + CW / 2, CT + CH - a]].forEach(([px, py]) => { x.beginPath(); x.moveTo(px, py - d); x.lineTo(px + d, py); x.lineTo(px, py + d); x.lineTo(px - d, py); x.closePath(); x.fill(); });
       x.restore(); return;
     }
     if (o.frame){ x.strokeStyle = o.color || T.acc; x.globalAlpha = .6; x.lineWidth = Math.max(1.5, 2 * k); rrect(x, CL + 34 * k, CT + 34 * k, CW - 68 * k, CH - 68 * k, Math.max(6, R - 16 * k)); x.stroke(); x.globalAlpha = 1; }
@@ -5452,8 +5439,7 @@ function drawVerseCard(X, W, H, o){
     }
     if (o.frame === 2){                                                   // đường kẻ + hình thoi trang trí giữa lời trích và địa chỉ
       const oy = REF_Y - rs - 34 * k, ac = o.color || T.acc, d = 7 * k; x.save(); x.strokeStyle = ac; x.fillStyle = ac; x.globalAlpha = .7; x.lineWidth = Math.max(1.2, 1.6 * k);
-      x.beginPath(); x.moveTo(CX - 120 * k, oy); x.lineTo(CX - 22 * k, oy); x.moveTo(CX + 22 * k, oy); x.lineTo(CX + 120 * k, oy); x.stroke();
-      x.beginPath(); x.moveTo(CX, oy - d); x.lineTo(CX + d, oy); x.lineTo(CX, oy + d); x.lineTo(CX - d, oy); x.closePath(); x.fill(); x.restore();
+      x.beginPath(); x.moveTo(CX - 60 * k, oy); x.lineTo(CX + 60 * k, oy); x.stroke(); x.restore();
     }
   };
   const ch = o.cache;
@@ -5488,7 +5474,7 @@ async function verseImage(nums){
   const IMG_FONTS = ['Playfair Display', 'EB Garamond', 'Lora', 'Merriweather', 'Inter', 'Open Sans', 'Roboto'].filter(n => FONTS[n]);
   const COLORS = [['', 'Tự động'], ['#3b2a1a', 'Nâu'], ['#1a1a1a', 'Đen'], ['#1f3a5f', 'Xanh navy'], ['#7a1f2b', 'Đỏ rượu'], ['#2f5d3a', 'Xanh lá'], ['#f6ebd0', 'Kem sáng'], ['#ffffff', 'Trắng']];
   const DEF = { theme:'cream', font:'Playfair Display', size:'p', scale:100, weight:'normal', italic:0, color:'', age:0, grain:0, frame:0, quote:'inline' };
-  const OLD1925 = { theme:'cream', font:'EB Garamond', weight:'normal', italic:0, color:'#3b2a1a', scale:100, age:78, grain:45, frame:0, quote:'inline' };   // kiểu sách cổ: nền kem, chữ Garamond nghiêng màu mực nâu, giấy vàng ố cổ điển (ngả vàng, mép sậm, vân giấy, hạt mịn), không viền kẻ + ngoặc kép lớn
+  const OLD1925 = { theme:'cream', font:'EB Garamond', weight:'normal', italic:0, color:'#3b2a1a', scale:100, age:70, grain:0, frame:0, quote:'inline' };   // kiểu sách cổ: nền kem, chữ Garamond nghiêng màu mực nâu, giấy vàng cổ điển sạch (ngả vàng đều, mép sậm nhẹ, không đốm, không hạt), không viền kẻ + ngoặc kép lớn
   const NIGHT = { theme:'dark', font:'Playfair Display', weight:'normal', italic:0, color:'', scale:100, frame:1, quote:'inline' };                          // kiểu đêm: nền tối, chữ kem, viền vàng
   const ELEGANT = { theme:'white', font:'Lora', weight:'normal', italic:0, color:'#1f3a5f', scale:100, frame:0, quote:'inline' };                           // kiểu trang nhã: nền trắng, chữ xanh navy   // kiểu sách cổ 1925 (nền kem + chữ Garamond + mực nâu đen như sách in xưa + khung mỏng cùng màu mực)
   const clean = q => {
