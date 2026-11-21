@@ -220,6 +220,8 @@ html[data-paper] .v.flash .vn{background:#000;color:#f4f3ee;box-shadow:0 0 0 2px
 /* Số chương lớn: cao đúng 2 dòng chữ, đỉnh số ngang đỉnh dòng 1, chân số ngang chân dòng 2; số câu 1 được lược bỏ (số chương thay cho số câu 1) như Kinh Thánh in */
 .dc{float:left;font-size:3.5em;line-height:.78;font-weight:700;color:var(--accent);margin:.07em .11em 0 0;padding:0;font-variant-numeric:lining-nums;letter-spacing:-.01em;text-indent:0}
 .dc + .vn,.dc + .pl > .vn{display:none}
+.dc.dcp{margin-right:.58em}   /* chương có thơ ở 2 dòng đầu: chừa thêm 1.5em (thụt âm của dòng thơ) để chữ không đè lên số */
+.para:has(.dcp){text-indent:-1.5em}
 .vn{font-family:var(--serif);font-size:.6em;font-weight:700;vertical-align:super;line-height:0;margin:0 .2em 0 .14em;color:var(--accent);font-variant-numeric:lining-nums;letter-spacing:0;text-indent:0;white-space:nowrap}   /* số câu: chỉ số nhỏ đứng ngay trước chữ, cùng họ chữ với lời văn */
 .v{border-radius:4px;scroll-margin-top:14px}
 .v.sel{background:var(--hl)}
@@ -233,8 +235,8 @@ html[data-paper][data-theme=dark] .poem .v.sel,html[data-paper][data-theme=dark]
 .poem{margin:0 0 .55em;text-align:left;padding-left:0;text-indent:0}
 .poem .v{display:block}
 /* Thơ như Kinh Thánh in: số câu là chỉ số nhỏ đứng ngay trước chữ, dòng thơ bắt đầu thẳng lề; mức thụt q1 / q2 / q3 mỗi mức 1.5em;
-   dòng dài tràn xuống thì thụt thêm một mức (treo). display:flow-root để các dòng thơ cạnh số chương lớn tự co lại nằm gọn bên phải số, không đè lên số */
-.pl{display:flow-root;--ind:0em;padding-left:calc(var(--ind) + 1.5em);text-indent:-1.5em;text-align:left}
+   dòng dài tràn xuống thì thụt thêm một mức (treo). Các dòng nằm cạnh số chương lớn đều bắt đầu thẳng một mép bên phải số (như bản in), chỉ 2 dòng đầu bị số chương chiếm chỗ */
+.pl{display:block;--ind:0em;padding-left:calc(var(--ind) + 1.5em);text-indent:-1.5em;text-align:left}
 .pl.q2{--ind:1.5em}
 .pl.q3{--ind:3em}
 .pl.q4{--ind:4.5em}
@@ -1208,7 +1210,7 @@ try { const v = localStorage.getItem('kt.sbx'); document.documentElement.style.s
   addEventListener('pageshow', () => { drop(); [100, 500, 1200].forEach(t => setTimeout(drop, t)); });     // quay lại trang từ bộ nhớ đệm của Safari
 })();
 
-const APP_VERSION = '2026.11.21k';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
+const APP_VERSION = '2026.11.21m';   // hiện ở cuối Cài đặt để biết máy đang chạy bản nào
 const DB_NAME = 'kinhthanh-pwa';
 
 const DEFAULT_FILE = 'kinhthanh-data.json';
@@ -2784,7 +2786,15 @@ $('#copyGo').onclick = async () => {
   const nums = verses.flatMap(v => v.e > v.n ? Array.from({ length:v.e - v.n + 1 }, (_, k) => v.n + k) : [v.n]);     // câu ghép 8-9 → ghi đủ 8-9 trong địa chỉ
   const titleCase = t => String(t).toLowerCase().replace(/(^|\s)(\p{L})/gu, (m, x, y) => x + y.toUpperCase());   // Sáng Thế Ký
   const ref = `${titleCase(curBook.name)} ${S.chapter}:${compressRange(nums)}`;
-  const body = verses.map(v => v.t.replace(/\[[^\[\]]*\]/g, m => isVerseBracket(m.slice(1, -1)) ? m : ' ').replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ');   // không kèm số câu, bỏ dấu chú thích (giữ lời trong ngoặc là chữ của câu)
+  /* Thơ: giữ đúng các dòng như trên màn hình (mỗi dòng thơ một hàng); văn xuôi vẫn nối liền một đoạn */
+  const poemV = v => Array.isArray(v.q) && v.q.length;
+  const clean = x => x.replace(/\[[^\[\]]*\]/g, m => isVerseBracket(m.slice(1, -1)) ? m : ' ').replace(/\s+/g, ' ').trim();
+  let body = '';
+  verses.forEach((v, i) => {
+    const t = poemV(v) ? poemSplit(v.t).split('\n').map(clean).filter(Boolean).join('\n') : clean(v.t);
+    if (!t) return;
+    body += (body ? ((poemV(v) || poemV(verses[i - 1] || {})) ? '\n' : ' ') : '') + t;
+  });   // không kèm số câu, bỏ dấu chú thích (giữ lời trong ngoặc là chữ của câu)
   const text = `\u201C${body}\u201D (${ref})`;
   try { await navigator.clipboard.writeText(text); toast('Đã sao chép ' + ref); }
   catch(e){ prompt('Sao chép đoạn văn:', text); }
@@ -3801,7 +3811,8 @@ function paperHTML(book, ch, verses, view, idp){
     const vm = Object.assign({}, fm, fnMapOf(v.fn));
     if (v.h){ close(); out += secHTML(v.h, vm); }
     const lead = print && i === 0 && v.n === 1 && !dcOffOf(book);                 // câu 1: số chương chữ lớn, vẫn hiện số câu 1 đứng sau
-    const dc  = lead ? `<span class="dc">${esc(ch)}</span>` : '';
+    const poemAt = x => !!(x && Array.isArray(x.q) && x.q.length);
+    const dc  = lead ? `<span class="dc${poemAt(v) || poemAt(verses[1]) ? ' dcp' : ''}">${esc(ch)}</span>` : '';
     const num = `<sup class="vn">${v.n}${v.e > v.n ? '–' + v.e : ''}</sup>`;
     const attrs = `class="v" id="${idp}${v.n}" data-n="${v.n}"`;
     if (!print){
@@ -3813,7 +3824,7 @@ function paperHTML(book, ch, verses, view, idp){
     if (!cur || cur !== want || v.p){ close(); cur = want; out += want === 'p' ? '<p class="para">' : '<div class="poem">'; }
     if (isPoem){
       out += `<span ${attrs}>${dc}` + vt.split('\n').map((ln, k) =>
-        `<span class="pl q${v.q[k] || 1}">${k === 0 ? num : ''}${richText(ln, vm)}</span>`).join('') + '</span>';   // số chương lớn đứng NGOÀI các dòng thơ để nằm đúng lề trái
+        `<span class="pl q${Math.max(+v.q[k] || 1, k ? 2 : 1)}">${k === 0 ? num : ''}${richText(ln, vm)}</span>`).join('') + '</span>';   // số chương lớn đứng NGOÀI các dòng thơ để nằm đúng lề trái
     } else out += `<span ${attrs}>${dc}${num}${richText(v.t, vm)}</span> `;
     /* Ghi chú KHÔNG số (vd "(Phó cho quản phường nhạc…)"): xuống dòng ngay sau câu đó, in nghiêng, cỡ chữ thường — không đẩy xuống cuối chương */
     const un = (v.fn || []).filter(f => !isNumFn(f));
